@@ -64,13 +64,26 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
 .brand img{width:38px;height:38px;border-radius:9px}
 .brand h1{margin:0;font:600 26px/1 var(--f-num);letter-spacing:.32em}
 .brand .tag{font:500 11px/1 var(--f-num);letter-spacing:.28em;color:var(--accent);text-transform:uppercase;margin-top:5px}
-.tabs{display:flex;flex-wrap:wrap;max-width:100%;border:1px solid var(--line-2);background:var(--panel)}
-.tabs button{font:500 12px/1 var(--f-num);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2);background:none;border:0;padding:10px 14px;cursor:pointer;transition:background .3s var(--ease),color .3s}
-.tabs button+button{border-left:1px solid var(--line-2)}
-@media(max-width:640px){.tabs{width:100%}.tabs button{flex:1 1 auto}}
-.tabs button:hover{background:var(--accent-soft);color:var(--ink)}
-.tabs button[aria-pressed=true]{background:var(--ink);color:var(--panel);cursor:default}
-.tabs button small{opacity:.65;letter-spacing:.08em;margin-left:6px}
+/* account dropdown: a button and a listbox, keyboard-operable */
+.acct{position:relative;min-width:240px}
+@media(max-width:640px){.acct{width:100%}}
+.acct-btn{display:flex;align-items:center;gap:12px;width:100%;padding:8px 12px;border:1px solid var(--line-2);background:var(--panel);color:var(--ink);cursor:pointer;text-align:left;transition:border-color .2s}
+.acct-btn:hover,.acct-btn[aria-expanded=true]{border-color:var(--accent)}
+.acct-btn:focus-visible,.acct-opt:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.acct-k{display:block;font:500 9.5px/1 var(--f-num);letter-spacing:.24em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
+.acct-v{display:block;font:600 13px/1.1 var(--f-num);letter-spacing:.12em;text-transform:uppercase}
+.acct-plan{margin-left:auto;font:600 10px/1 var(--f-num);letter-spacing:.16em;text-transform:uppercase;padding:4px 6px;border:1px solid var(--line-2);color:var(--accent)}
+.acct-chev{width:12px;height:12px;flex:0 0 auto;stroke:var(--accent);fill:none;stroke-width:1.8;transition:transform .25s var(--ease)}
+.acct-btn[aria-expanded=true] .acct-chev{transform:rotate(180deg)}
+.acct-menu{position:absolute;z-index:40;top:calc(100% + 4px);left:0;right:0;margin:0;padding:4px 0;list-style:none;background:var(--panel);border:1px solid var(--line-2);border-top:2px solid var(--accent);box-shadow:0 18px 40px -16px rgba(10,40,70,.45);animation:drop .25s var(--ease)}
+@keyframes drop{from{opacity:0;transform:translateY(-6px)}}
+.acct-opt{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;color:var(--ink-2)}
+.acct-opt:hover,.acct-opt.act{background:var(--accent-soft);color:var(--ink)}
+.acct-opt[aria-selected=true]{color:var(--ink);box-shadow:inset 2px 0 0 var(--accent)}
+.acct-opt .acct-v{font-size:12.5px}
+.acct-opt small{display:block;font-size:11.5px;color:var(--ink-3);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px}
+.acct-tick{margin-left:0;width:14px;height:14px;stroke:var(--accent);fill:none;stroke-width:2;visibility:hidden}
+.acct-opt[aria-selected=true] .acct-tick{visibility:visible}
 .sync{display:flex;align-items:center;gap:12px;font:500 11.5px/1 var(--f-num);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3)}
 .live{display:inline-flex;align-items:center;gap:8px;color:var(--ink-2)}
 .live i{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 0 var(--glow);animation:pulse 2.4s infinite}
@@ -233,7 +246,14 @@ footer{margin-top:22px;display:flex;flex-wrap:wrap;gap:6px 20px;justify-content:
       <img src="/dash.png" alt="">
       <div><h1>DASH</h1><div class="tag">Usage telemetry · Claude Code</div></div>
     </div>
-    <div class="tabs" id="tabs" role="group" aria-label="Account"></div>
+    <div class="acct" id="acct">
+      <button type="button" class="acct-btn" id="acctBtn" aria-haspopup="listbox" aria-expanded="false" aria-controls="acctMenu">
+        <span><span class="acct-k">Account</span><span class="acct-v" id="acctName">…</span></span>
+        <span class="acct-plan" id="acctPlan"></span>
+        <svg class="acct-chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg>
+      </button>
+      <ul class="acct-menu" id="acctMenu" role="listbox" aria-label="Account" tabindex="-1" hidden></ul>
+    </div>
     <div class="sync">
       <span class="live" id="live"><i></i><span id="liveTxt">Connecting</span></span>
       <span id="next"></span>
@@ -565,7 +585,8 @@ $('csv').addEventListener('click',e=>{
 function render(){
   if(!D) return;
   const a=D.accounts.find(x=>x.key===D.account);
-  $('tabs').innerHTML=D.accounts.map(x=>`<button aria-pressed="${x.key===D.account}" data-k="${esc(x.key)}" title="${esc(x.email||'')}">${esc(x.key)}<small>${esc(x.plan)}</small></button>`).join('');
+  $('acctName').textContent=D.account; $('acctPlan').textContent=D.plan||''; $('acctBtn').title=a?.email||'';
+  $('acctMenu').innerHTML=D.accounts.map((x,i)=>`<li class="acct-opt" role="option" id="ao${i}" data-k="${esc(x.key)}" aria-selected="${x.key===D.account}"><span><span class="acct-v">${esc(x.key)}</span><small>${esc(x.email||'no e-mail found')}</small></span><span class="acct-plan">${esc(x.plan)}</span><svg class="acct-tick" viewBox="0 0 14 14" aria-hidden="true"><path d="m2.5 7.5 3 3 6-7"/></svg></li>`).join('');
   $('alert').hidden=!D.err; $('alertTxt').textContent=D.err?(' '+D.err+(D.history?.length?' — showing recorded history.':'')):'';
   $('live').classList.toggle('off',!!D.err); $('liveTxt').textContent=D.err?'Offline':'Live · '+new Date(D.now).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
   gauge($('gS'),D.proj?.session,5*HOUR); gauge($('gW'),D.proj?.weekly,7*DAY);
@@ -649,7 +670,27 @@ async function load(){
   }catch(e){ $('alert').hidden=false; $('alertTxt').textContent=' Dash server not reachable. Run `claude-dash open` again.'; $('live').classList.add('off'); $('liveTxt').textContent='Offline'; lastLoad=Date.now(); }
   finally{ loading=false; }
 }
-$('tabs').addEventListener('click',e=>{const b=e.target.closest('button[data-k]');if(b&&b.dataset.k!==account){account=b.dataset.k;history.replaceState(null,'','?account='+encodeURIComponent(account));load()}});
+/* ---------- account dropdown ---------- */
+let acctAct=-1;
+const acctOpts=()=>[...$('acctMenu').querySelectorAll('[role=option]')];
+function acctMark(i){const o=acctOpts();if(!o.length)return;acctAct=(i+o.length)%o.length;o.forEach((x,j)=>x.classList.toggle('act',j===acctAct));$('acctMenu').setAttribute('aria-activedescendant',o[acctAct].id);o[acctAct].scrollIntoView({block:'nearest'})}
+function acctOpen(){if(!D)return;$('acctMenu').hidden=false;$('acctBtn').setAttribute('aria-expanded','true');acctMark(Math.max(0,acctOpts().findIndex(o=>o.dataset.k===account)));$('acctMenu').focus()}
+function acctClose(focusBtn){$('acctMenu').hidden=true;$('acctBtn').setAttribute('aria-expanded','false');if(focusBtn)$('acctBtn').focus()}
+function acctPick(k){acctClose(true);if(k&&k!==account){account=k;history.replaceState(null,'','?account='+encodeURIComponent(account));$('acctName').textContent=k;load()}}
+$('acctBtn').addEventListener('click',()=>$('acctMenu').hidden?acctOpen():acctClose(false));
+$('acctBtn').addEventListener('keydown',e=>{if(['ArrowDown','ArrowUp','Enter',' '].includes(e.key)){e.preventDefault();acctOpen()}});
+$('acctMenu').addEventListener('click',e=>{const o=e.target.closest('[role=option]');if(o)acctPick(o.dataset.k)});
+$('acctMenu').addEventListener('mousemove',e=>{const o=e.target.closest('[role=option]');if(o)acctMark(acctOpts().indexOf(o))});
+$('acctMenu').addEventListener('keydown',e=>{
+  const o=acctOpts();
+  if(e.key==='ArrowDown'){e.preventDefault();acctMark(acctAct+1)}
+  else if(e.key==='ArrowUp'){e.preventDefault();acctMark(acctAct-1)}
+  else if(e.key==='Home'){e.preventDefault();acctMark(0)}
+  else if(e.key==='End'){e.preventDefault();acctMark(o.length-1)}
+  else if(e.key==='Enter'||e.key===' '){e.preventDefault();if(o[acctAct])acctPick(o[acctAct].dataset.k)}
+  else if(e.key==='Escape'||e.key==='Tab'){if(e.key==='Escape')e.preventDefault();acctClose(e.key==='Escape')}
+});
+document.addEventListener('click',e=>{if(!$('acctMenu').hidden&&!e.target.closest('#acct'))acctClose(false)});
 $('refresh').addEventListener('click',load);
 const THEMES=['auto','light','dark'];
 function applyTheme(t){if(t==='auto')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=t;$('theme').title='Theme: '+t;try{localStorage.setItem('dash.theme',t)}catch{}}
