@@ -147,13 +147,18 @@ async function snapshot(acct, { record = true } = {}) {
 }
 
 // ---------- projection ----------
-// Burn rate in pct/hour for a window: recent slope if enough points, else average since window start.
-function burn(points, start, now, pctNow) {
+// Burn rate in pct/hour for a window: the slope over a recent stretch when the snapshots
+// cover enough of it, else the average since the window started. The stretch matches the
+// window: 2h for the 5h session; 24h for the week, because a two-hour burst extrapolated
+// over the nights and days off predicts a limit hit that never comes.
+const RECENT = { session: { span: 2 * HOUR, min: 5 * 60e3 }, weekly: { span: 24 * HOUR, min: 12 * HOUR } };
+function burn(points, start, now, pctNow, kind = 'session') {
+  const { span, min } = RECENT[kind];
   const win = points.filter(p => p.t >= start && p.pct != null);
-  const recent = win.filter(p => p.t >= now - 2 * HOUR);
+  const recent = win.filter(p => p.t >= now - span);
   if (recent.length >= 2) {
     const a = recent[0], b = recent.at(-1);
-    if (b.t - a.t > 5 * 60e3 && b.pct >= a.pct) return { rate: (b.pct - a.pct) / ((b.t - a.t) / HOUR), basis: 'recent slope' };
+    if (b.t - a.t >= min && b.pct >= a.pct) return { rate: (b.pct - a.pct) / ((b.t - a.t) / HOUR), basis: kind === 'weekly' ? 'last 24h' : 'recent slope' };
   }
   const el = (now - start) / HOUR;
   return { rate: el > 0.05 ? pctNow / el : 0, basis: 'window average' };
@@ -167,7 +172,7 @@ function project(hist, snap) {
     const reset = Date.parse(w.reset), start = reset - span;
     const pts = hist.map(h => ({ t: h.t, pct: h[name]?.reset && Math.abs(Date.parse(h[name].reset) - reset) < 120e3 ? h[name].pct : null }));
     pts.push({ t: now, pct: w.pct });
-    const { rate, basis } = burn(pts.filter(p => p.pct != null), start, now, w.pct);
+    const { rate, basis } = burn(pts.filter(p => p.pct != null), start, now, w.pct, name);
     const hitsLimit = rate > 0 && w.pct + rate * (reset - now) / HOUR >= 100;
     out[name] = {
       pct: w.pct, start, reset, rate, basis,
