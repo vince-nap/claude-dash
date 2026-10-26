@@ -85,8 +85,35 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
 /* ---------- grid and panels ---------- */
 .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
 .s3{grid-column:span 3}.s4{grid-column:span 4}.s5{grid-column:span 5}.s6{grid-column:span 6}.s7{grid-column:span 7}.s8{grid-column:span 8}.s12{grid-column:span 12}
-@media(max-width:1180px){.s3{grid-column:span 6}.s4,.s5,.s7,.s8{grid-column:span 12}.s6{grid-column:span 12}}
-@media(max-width:640px){.s3{grid-column:span 12}}
+/* medium screens: everything narrower than full becomes a half; small screens: one column */
+@media(max-width:1180px){.s3,.s4,.s5,.s6,.s7,.s8{grid-column:span 6}}
+@media(max-width:760px){.s3,.s4,.s5,.s6,.s7,.s8{grid-column:span 12}}
+
+/* ---------- layout editor ---------- */
+body:not(.editing) #main>[data-pid].off{display:none}
+.ebar{display:none}
+.editbar{display:none;align-items:center;gap:12px 14px;flex-wrap:wrap;margin:0 0 16px;padding:12px 16px;border:1px solid var(--accent);background:var(--accent-soft)}
+body.editing .editbar{display:flex}
+.editbar b{font:600 12px/1 var(--f-num);letter-spacing:.26em;color:var(--accent)}
+.editbar span{font-size:13px;color:var(--ink-2);margin-right:auto}
+.btn.solid{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.btn[aria-pressed=true]{border-color:var(--accent);color:var(--accent)}
+body.editing #main>[data-pid]{padding:0;background:var(--panel);border:1px dashed var(--line-2);box-shadow:none;cursor:grab;animation:none;transition:opacity .2s,border-color .2s}
+body.editing #main>[data-pid]>:not(.ebar){display:none!important}
+body.editing #main>[data-pid]:hover{border-color:var(--accent)}
+body.editing #main>[data-pid].off{opacity:.45}
+body.editing #main>[data-pid].dragging{opacity:.35;border-color:var(--accent);border-style:solid}
+body.editing .ebar{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap;padding:14px 16px;min-height:74px}
+.grip{font:600 18px/1 var(--f-num);color:var(--accent);letter-spacing:-.1em;cursor:grab;user-select:none}
+.et{font:500 12.5px/1.2 var(--f-num);letter-spacing:.24em;text-transform:uppercase;color:var(--ink);margin-right:auto;min-width:0}
+.et small{display:block;font:500 10px/1.4 var(--f-num);letter-spacing:.16em;color:var(--ink-3);margin-top:3px}
+.seg{display:inline-flex;border:1px solid var(--line-2)}
+.seg button,.mv{font:600 11.5px/1 var(--f-num);letter-spacing:.04em;min-width:30px;padding:7px 8px;border:0;background:var(--panel);color:var(--ink-2);cursor:pointer}
+.seg button+button{border-left:1px solid var(--line-2)}
+.seg button:hover,.mv:hover:not(:disabled){background:var(--accent-soft);color:var(--ink)}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--panel)}
+.mv{border:1px solid var(--line-2)}
+.mv:disabled{opacity:.35;cursor:default}
 .panel{position:relative;background:var(--panel);border:1px solid var(--line);padding:18px 20px 20px;min-width:0;
   box-shadow:0 22px 44px -34px rgba(10,40,70,.45);transition:border-color .35s}
 .panel::before,.panel::after{content:"";position:absolute;width:12px;height:12px;border:0 solid var(--accent);opacity:.7;transition:width .45s var(--ease),height .45s var(--ease),opacity .3s;pointer-events:none}
@@ -158,7 +185,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
 .cal{display:grid;grid-template-columns:28px repeat(7,minmax(0,1fr));gap:3px}
 .cal .dh{font:500 10px/1 var(--f-num);letter-spacing:.18em;color:var(--ink-3);text-align:center;padding-bottom:4px}
 .cal .wk{font:500 10px/1 var(--f-num);color:var(--ink-3);display:grid;align-items:center}
-.cal .c{position:relative;aspect-ratio:1.25;min-height:30px;border-radius:2px;background:var(--seq-0);padding:4px 5px;font:500 10.5px/1 var(--f-num);color:var(--ink-2);cursor:default;transition:transform .2s var(--ease)}
+.cal .c{position:relative;aspect-ratio:1.25;min-height:30px;max-height:58px;border-radius:2px;background:var(--seq-0);padding:4px 5px;font:500 10.5px/1 var(--f-num);color:var(--ink-2);cursor:default;transition:transform .2s var(--ease)}
 .cal .c:hover{transform:scale(1.06);z-index:1}
 .cal .c.future{background:transparent;border:1px dashed var(--line);color:var(--ink-3)}
 .cal .c.today{outline:2px solid var(--accent);outline-offset:1px}
@@ -209,35 +236,37 @@ footer{margin-top:22px;display:flex;flex-wrap:wrap;gap:6px 20px;justify-content:
     <div class="sync">
       <span class="live" id="live"><i></i><span id="liveTxt">Connecting</span></span>
       <span id="next"></span>
+      <button class="btn" id="editBtn" type="button" aria-pressed="false">Edit layout</button>
       <button class="iconbtn" id="refresh" title="Refresh now" aria-label="Refresh now"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
       <button class="iconbtn" id="theme" title="Theme" aria-label="Switch theme"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg></button>
     </div>
   </header>
+  <div class="editbar" id="editbar" role="region" aria-label="Layout editor"><b>EDIT LAYOUT</b><span>Drag panels to reorder, or use the arrows. Pick a width to sit panels side by side: ¼ ⅓ ½ ⅔ or full. Hidden panels stay here, dimmed.</span><button class="btn" id="resetLayout" type="button">Reset</button><button class="btn solid" id="doneLayout" type="button">Done</button></div>
   <div class="alert" id="alert" hidden role="alert"><b>SIGNAL LOST</b><span id="alertTxt"></span></div>
 
   <main class="grid" id="main">
-    <section class="panel s4 reveal"><div class="ph"><h2>Session</h2><span class="meta">5-hour window</span></div><div id="gS"></div></section>
-    <section class="panel s4 reveal"><div class="ph"><h2>Weekly</h2><span class="meta">7-day window</span></div><div id="gW"></div></section>
-    <section class="panel s4 reveal"><div class="ph"><h2>Forecast</h2><span class="meta" id="fcMeta"></span></div><div id="fc"></div></section>
+    <section data-pid="session" data-title="Session" data-span="4" class="panel s4 reveal"><div class="ph"><h2>Session</h2><span class="meta">5-hour window</span></div><div id="gS"></div></section>
+    <section data-pid="weekly" data-title="Weekly" data-span="4" class="panel s4 reveal"><div class="ph"><h2>Weekly</h2><span class="meta">7-day window</span></div><div id="gW"></div></section>
+    <section data-pid="forecast" data-title="Forecast" data-span="4" class="panel s4 reveal"><div class="ph"><h2>Forecast</h2><span class="meta" id="fcMeta"></span></div><div id="fc"></div></section>
 
-    <section class="s12 reveal"><div class="kpis" id="kpis"></div></section>
+    <section data-pid="kpis" data-title="Key figures" data-span="12" class="s12 reveal"><div class="kpis" id="kpis"></div></section>
 
-    <section class="panel s6 reveal"><div class="ph"><h2>Session window</h2><span class="meta" id="cSm"></span></div><div class="chart" id="cS"></div>
+    <section data-pid="sessionWindow" data-title="Session window" data-span="6" class="panel s6 reveal"><div class="ph"><h2>Session window</h2><span class="meta" id="cSm"></span></div><div class="chart" id="cS"></div>
       <div class="legend"><span><i class="sw" style="border-color:var(--accent)"></i>Consumed</span><span><i class="sw" style="border-color:var(--accent);border-top-style:dashed"></i>Projected at current burn</span><span><i class="sw" style="border-color:var(--crit)"></i>Limit</span></div></section>
-    <section class="panel s6 reveal"><div class="ph"><h2>Weekly window</h2><span class="meta" id="cWm"></span></div><div class="chart" id="cW"></div>
+    <section data-pid="weeklyWindow" data-title="Weekly window" data-span="6" class="panel s6 reveal"><div class="ph"><h2>Weekly window</h2><span class="meta" id="cWm"></span></div><div class="chart" id="cW"></div>
       <div class="legend"><span><i class="sw" style="border-color:var(--accent)"></i>Consumed</span><span><i class="sw" style="border-color:var(--accent);border-top-style:dashed"></i>Projected at current burn</span><span><i class="sw" style="border-color:var(--ink-3)"></i>Even pace</span><span><i class="sw" style="border-color:var(--crit)"></i>Limit</span></div></section>
 
-    <section class="panel s7 reveal"><div class="ph"><h2>Daily consumption</h2><span class="meta">Weekly % per day · 14 days</span></div><div class="chart" id="cD"></div><p class="note" id="cDn"></p></section>
-    <section class="panel s5 reveal"><div class="ph"><h2>Calendar</h2><span class="meta" id="calM">Last 6 weeks</span></div><div id="cal"></div></section>
+    <section data-pid="daily" data-title="Daily consumption" data-span="7" class="panel s7 reveal"><div class="ph"><h2>Daily consumption</h2><span class="meta">Weekly % per day · 14 days</span></div><div class="chart" id="cD"></div><p class="note" id="cDn"></p></section>
+    <section data-pid="calendar" data-title="Calendar" data-span="5" class="panel s5 reveal"><div class="ph"><h2>Calendar</h2><span class="meta" id="calM">Last 6 weeks</span></div><div id="cal"></div></section>
 
-    <section class="panel s6 reveal"><div class="ph"><h2>Session peaks</h2><span class="meta">Highest % per 5-hour window</span></div><div class="chart" id="cP"></div></section>
-    <section class="panel s6 reveal"><div class="ph"><h2>Rhythm</h2><span class="meta">Session % by hour of day</span></div><div class="chart" id="cH"></div></section>
+    <section data-pid="peaks" data-title="Session peaks" data-span="6" class="panel s6 reveal"><div class="ph"><h2>Session peaks</h2><span class="meta">Highest % per 5-hour window</span></div><div class="chart" id="cP"></div></section>
+    <section data-pid="rhythm" data-title="Rhythm" data-span="6" class="panel s6 reveal"><div class="ph"><h2>Rhythm</h2><span class="meta">Session % by hour of day</span></div><div class="chart" id="cH"></div></section>
 
-    <section class="panel s4 reveal"><div class="ph"><h2>By surface</h2><span class="meta">Share of weekly use</span></div><div id="srf"></div></section>
-    <section class="panel s4 reveal"><div class="ph"><h2>Model limits</h2><span class="meta">Scoped weekly</span></div><div id="mdl"></div></section>
-    <section class="panel s4 reveal"><div class="ph"><h2>Cost model</h2><span class="meta" id="calibM"></span></div><div id="cost"></div></section>
+    <section data-pid="surface" data-title="By surface" data-span="4" class="panel s4 reveal"><div class="ph"><h2>By surface</h2><span class="meta">Share of weekly use</span></div><div id="srf"></div></section>
+    <section data-pid="models" data-title="Model limits" data-span="4" class="panel s4 reveal"><div class="ph"><h2>Model limits</h2><span class="meta">Scoped weekly</span></div><div id="mdl"></div></section>
+    <section data-pid="cost" data-title="Cost model" data-span="4" class="panel s4 reveal"><div class="ph"><h2>Cost model</h2><span class="meta" id="calibM"></span></div><div id="cost"></div></section>
 
-    <section class="panel s12 reveal">
+    <section data-pid="log" data-title="Telemetry log" data-span="12" class="panel s12 reveal">
       <details class="log" id="logD">
         <summary><div class="ph"><h2>Telemetry log</h2><span class="meta" id="logM"></span></div><button class="btn" id="csv" type="button">Export CSV</button></summary>
         <div class="scroll"><table id="log"></table></div>
@@ -532,6 +561,69 @@ function render(){
   $('ftL').textContent=`${a?.email||D.account} · ${D.plan}${D.tier?' / '+D.tier:''}${D.firstSnapshot?' · recording since '+dd(D.firstSnapshot):''}`;
   document.title=(D.proj?.session?D.proj.session.pct+'% · ':'')+'Dash';
 }
+/* ---------- layout editor ----------
+   The layout is an ordered list of {id, span, hidden}, kept in this browser (localStorage).
+   A panel a saved layout doesn't know (added in a later version) keeps its default place at the end. */
+const LAYOUT_KEY='dash.layout.v1', WIDTHS=[[3,'¼'],[4,'⅓'],[6,'½'],[8,'⅔'],[12,'Full']];
+const panelEls=()=>[...$('main').querySelectorAll(':scope>[data-pid]')];
+const DEFAULT_LAYOUT=panelEls().map(el=>({id:el.dataset.pid,span:+el.dataset.span,hidden:false}));
+let editing=false, dragEl=null;
+function setSpan(el,n){el.classList.remove('s3','s4','s5','s6','s7','s8','s12');el.classList.add('s'+n);el.dataset.span=n}
+function layoutNow(){return panelEls().map(el=>({id:el.dataset.pid,span:+el.dataset.span,hidden:el.classList.contains('off')}))}
+function saveLayout(){try{localStorage.setItem(LAYOUT_KEY,JSON.stringify(layoutNow()))}catch{}}
+function loadLayout(){try{const x=JSON.parse(localStorage.getItem(LAYOUT_KEY)||'null');return Array.isArray(x)?x:null}catch{return null}}
+function applyLayout(L){
+  const by={};panelEls().forEach(el=>by[el.dataset.pid]=el);
+  const saved=(L||[]).filter(x=>x&&by[x.id]);
+  const order=[...saved,...DEFAULT_LAYOUT.filter(d=>!saved.some(x=>x.id===d.id))];
+  const ok=n=>[3,4,5,6,7,8,12].includes(n);
+  order.forEach(x=>{const el=by[x.id];setSpan(el,ok(+x.span)?+x.span:DEFAULT_LAYOUT.find(d=>d.id===x.id).span);el.classList.toggle('off',!!x.hidden);$('main').appendChild(el)});
+  editBars();
+}
+function editBars(){
+  const els=panelEls();
+  els.forEach((el,i)=>{
+    let bar=el.querySelector(':scope>.ebar');
+    if(!bar){bar=document.createElement('div');bar.className='ebar';el.prepend(bar)}
+    const span=+el.dataset.span, off=el.classList.contains('off'), t=esc(el.dataset.title);
+    const wl=(WIDTHS.find(w=>w[0]===span)||[0,span+'/12'])[1];
+    bar.innerHTML='<span class="grip" aria-hidden="true">⋮⋮</span><span class="et">'+t+'<small>'+(off?'Hidden':'Width '+wl)+'</small></span>'+
+      '<span class="seg" role="group" aria-label="Width of '+t+'">'+WIDTHS.map(([n,l])=>'<button type="button" data-w="'+n+'" aria-pressed="'+(n===span)+'" title="'+(n===12?'Full width':l+' width')+'">'+l+'</button>').join('')+'</span>'+
+      '<button type="button" class="mv" data-mv="-1" aria-label="Move '+t+' earlier" title="Move earlier"'+(i===0?' disabled':'')+'>←</button>'+
+      '<button type="button" class="mv" data-mv="1" aria-label="Move '+t+' later" title="Move later"'+(i===els.length-1?' disabled':'')+'>→</button>'+
+      '<button type="button" class="mv" data-vis title="'+(off?'Show':'Hide')+' this panel">'+(off?'Show':'Hide')+'</button>';
+    el.draggable=editing;
+  });
+}
+function setEditing(on){
+  editing=on;document.body.classList.toggle('editing',on);
+  $('editBtn').setAttribute('aria-pressed',on);$('editBtn').textContent=on?'Editing…':'Edit layout';
+  editBars();hideTip();
+  if(!on){saveLayout();render()}
+}
+$('editBtn').addEventListener('click',()=>setEditing(!editing));
+$('doneLayout').addEventListener('click',()=>setEditing(false));
+$('resetLayout').addEventListener('click',()=>{try{localStorage.removeItem(LAYOUT_KEY)}catch{}applyLayout(DEFAULT_LAYOUT)});
+document.addEventListener('keydown',e=>{if(editing&&e.key==='Escape')setEditing(false)});
+$('main').addEventListener('click',e=>{
+  if(!editing)return;const el=e.target.closest('[data-pid]');if(!el)return;
+  const w=e.target.closest('[data-w]'), mv=e.target.closest('[data-mv]'), vis=e.target.closest('[data-vis]');
+  if(w){setSpan(el,+w.dataset.w);editBars()}
+  else if(mv&&!mv.disabled){const els=panelEls(),i=els.indexOf(el),j=i+(+mv.dataset.mv);if(j<0||j>=els.length)return;if(j<i)els[j].before(el);else els[j].after(el);editBars();const again=el.querySelector('[data-mv="'+mv.dataset.mv+'"]');(again&&!again.disabled?again:el.querySelector('.mv')).focus()}
+  else if(vis){el.classList.toggle('off');editBars()}
+});
+$('main').addEventListener('dragstart',e=>{if(!editing)return;dragEl=e.target.closest('[data-pid]');if(!dragEl)return;dragEl.classList.add('dragging');e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',dragEl.dataset.pid)}catch{}});
+$('main').addEventListener('dragover',e=>{
+  if(!editing||!dragEl)return;e.preventDefault();
+  const t=e.target.closest('[data-pid]');if(!t||t===dragEl)return;
+  /* right half of a tile = drop after it, left half = before: that is what puts panels side by side */
+  const r=t.getBoundingClientRect(), after=e.clientX>r.left+r.width/2;
+  if(after){if(t.nextElementSibling!==dragEl)t.after(dragEl)}else if(t.previousElementSibling!==dragEl)t.before(dragEl);
+});
+$('main').addEventListener('drop',e=>{if(editing)e.preventDefault()});
+$('main').addEventListener('dragend',()=>{if(!dragEl)return;dragEl.classList.remove('dragging');dragEl=null;editBars()});
+applyLayout(loadLayout());
+
 let loading=false;
 async function load(){
   if(loading)return; loading=true;

@@ -67,6 +67,8 @@ All commands take `--account <key|plan>` and `--config <file>`.
 | Cost model | The task-size estimates, multipliers and calibration runs behind `claude-dash plan` |
 | Telemetry log | Every recorded point, with CSV export |
 
+**Arrange it your way.** Click **Edit layout**: every panel collapses to a tile you can drag into a new order (or move with the arrow buttons), set to ¼, ⅓, ½, ⅔ or full width so panels sit side by side, or hide. **Done** saves the layout in your browser; **Reset** brings back the default.
+
 The day, calendar, peak and rhythm views are built from Dash's own snapshots, so they fill in as it records: every minute while the dashboard is open, plus whenever you run a command. For a complete picture, schedule `claude-dash snapshot` (Task Scheduler, cron or launchd) every 10–15 minutes.
 
 ## Configuration
