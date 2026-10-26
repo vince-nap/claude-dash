@@ -1,0 +1,6 @@
+# personal state: never commit
+data/
+dash.config.json
+*.log
+node_modules/
+.DS_Store
