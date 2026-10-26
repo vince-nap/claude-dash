@@ -182,6 +182,7 @@ body.editing .ebar{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap;p
 .legend span{display:inline-flex;align-items:center;gap:7px}
 .sw{display:inline-block;width:14px;height:0;border-top:2px solid}
 .sw.blk{width:10px;height:10px;border:0;border-radius:2px}
+.sw.hatch{width:14px;height:10px;border:1px solid var(--line-2);background:repeating-linear-gradient(45deg,var(--line-2) 0 1.5px,transparent 1.5px 5px)}
 .cal{display:grid;grid-template-columns:28px repeat(7,minmax(0,1fr));gap:3px}
 .cal .dh{font:500 10px/1 var(--f-num);letter-spacing:.18em;color:var(--ink-3);text-align:center;padding-bottom:4px}
 .cal .wk{font:500 10px/1 var(--f-num);color:var(--ink-3);display:grid;align-items:center}
@@ -252,9 +253,9 @@ footer{margin-top:22px;display:flex;flex-wrap:wrap;gap:6px 20px;justify-content:
     <section data-pid="kpis" data-title="Key figures" data-span="12" class="s12 reveal"><div class="kpis" id="kpis"></div></section>
 
     <section data-pid="sessionWindow" data-title="Session window" data-span="6" class="panel s6 reveal"><div class="ph"><h2>Session window</h2><span class="meta" id="cSm"></span></div><div class="chart" id="cS"></div>
-      <div class="legend"><span><i class="sw" style="border-color:var(--accent)"></i>Consumed</span><span><i class="sw" style="border-color:var(--accent);border-top-style:dashed"></i>Projected at current burn</span><span><i class="sw" style="border-color:var(--crit)"></i>Limit</span></div></section>
+      <div class="legend"><span><i class="sw" style="border-color:var(--accent)"></i>Consumed</span><span><i class="sw" style="border-color:var(--accent);border-top-style:dashed"></i>Projected at current burn</span><span><i class="sw" style="border-color:var(--crit)"></i>Limit</span><span><i class="sw hatch"></i>Not recorded</span></div></section>
     <section data-pid="weeklyWindow" data-title="Weekly window" data-span="6" class="panel s6 reveal"><div class="ph"><h2>Weekly window</h2><span class="meta" id="cWm"></span></div><div class="chart" id="cW"></div>
-      <div class="legend"><span><i class="sw" style="border-color:var(--accent)"></i>Consumed</span><span><i class="sw" style="border-color:var(--accent);border-top-style:dashed"></i>Projected at current burn</span><span><i class="sw" style="border-color:var(--ink-3)"></i>Even pace</span><span><i class="sw" style="border-color:var(--crit)"></i>Limit</span></div></section>
+      <div class="legend"><span><i class="sw" style="border-color:var(--accent)"></i>Consumed</span><span><i class="sw" style="border-color:var(--accent);border-top-style:dashed"></i>Projected at current burn</span><span><i class="sw" style="border-color:var(--ink-3)"></i>Even pace</span><span><i class="sw" style="border-color:var(--crit)"></i>Limit</span><span><i class="sw hatch"></i>Not recorded</span></div></section>
 
     <section data-pid="daily" data-title="Daily consumption" data-span="7" class="panel s7 reveal"><div class="ph"><h2>Daily consumption</h2><span class="meta">Weekly % per day · 14 days</span></div><div class="chart" id="cD"></div><p class="note" id="cDn"></p></section>
     <section data-pid="calendar" data-title="Calendar" data-span="5" class="panel s5 reveal"><div class="ph"><h2>Calendar</h2><span class="meta" id="calM">Last 6 weeks</span></div><div id="cal"></div></section>
@@ -405,11 +406,25 @@ function windowChart(id,p,span,even){
   for(let i=0;i<=n;i++){const t=p.start+(p.reset-p.start)*i/n;g+=`<text class="ax" x="${x(t)}" y="${H-8}" text-anchor="${i==0?'start':i==n?'end':'middle'}">${span===5*HOUR?hm(t):new Date(t).toLocaleDateString([],{weekday:'short'})}</text>`}
   if(even) g+=`<line x1="${x(p.start)}" y1="${y(0)}" x2="${x(p.reset)}" y2="${y(100)}" stroke="${css('--ink-3')}" stroke-width="1" opacity=".55"/>`;
   g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y(100)}" y2="${y(100)}" stroke="${css('--crit')}" stroke-width="1.5"/><text class="ax" x="${W-m.r}" y="${y(100)-6}" text-anchor="end" style="fill:${css('--crit')}">LIMIT</text>`;
-  const pts=[{t:p.start,pct:0},...p.points.filter(a=>a.t<=now&&a.t>=p.start),{t:now,pct:p.pct}].sort((a,b)=>a.t-b.t);
-  const line=pts.map((a,i)=>`${i?'L':'M'}${x(a.t).toFixed(1)},${y(a.pct).toFixed(1)}`).join('');
-  const acc=css('--accent');
-  g+=`<defs><linearGradient id="gr${id}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${acc}" stop-opacity=".28"/><stop offset="1" stop-color="${acc}" stop-opacity="0"/></linearGradient></defs>`;
-  g+=`<path d="${line}L${x(now)},${y(0)}L${x(p.start)},${y(0)}Z" fill="url(#gr${id})"/><path d="${line}" fill="none" stroke="${acc}" stroke-width="2" stroke-linejoin="round"/>`;
+  /* Only what was observed. Usage is known at snapshot times, nothing in between:
+     - before the first snapshot of the window it is unknown (unless that snapshot says 0%,
+       then it was 0 all along) - shown as a hatched "not recorded" band, never as a line;
+     - across a gap of more than an hour the line holds level and steps up at the next
+       snapshot, instead of a diagonal that invents steady use overnight. */
+  const pts=[...p.points.filter(a=>a.t<=now&&a.t>=p.start),{t:now,pct:p.pct}].sort((a,b)=>a.t-b.t);
+  if(pts[0].pct===0||pts[0].t-p.start<10*60e3) pts.unshift({t:p.start,pct:0});
+  const firstT=pts[0].t, acc=css('--accent');
+  let line=`M${x(pts[0].t).toFixed(1)},${y(pts[0].pct).toFixed(1)}`;
+  for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i];if(b.t-a.t>HOUR&&b.pct!==a.pct)line+=`L${x(b.t).toFixed(1)},${y(a.pct).toFixed(1)}`;line+=`L${x(b.t).toFixed(1)},${y(b.pct).toFixed(1)}`}
+  g+=`<defs><linearGradient id="gr${id}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${acc}" stop-opacity=".28"/><stop offset="1" stop-color="${acc}" stop-opacity="0"/></linearGradient>
+    <pattern id="ht${id}" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" stroke="${css('--line-2')}" stroke-width="1.2"/></pattern></defs>`;
+  if(firstT>p.start){
+    const bw=x(firstT)-x(p.start);
+    g+=`<rect x="${x(p.start)}" y="${m.t}" width="${bw}" height="${ih}" fill="url(#ht${id})" opacity=".8"/>`;
+    if(bw>90) g+=`<text class="ax" x="${x(p.start)+bw/2}" y="${m.t+ih/2}" text-anchor="middle">NOT RECORDED</text>`;
+  }
+  g+=`<path d="${line}L${x(now)},${y(0)}L${x(firstT)},${y(0)}Z" fill="url(#gr${id})"/><path d="${line}" fill="none" stroke="${acc}" stroke-width="2" stroke-linejoin="round"/>`;
+  if(firstT>p.start&&pts.length>1) g+=`<circle cx="${x(firstT)}" cy="${y(pts[0].pct)}" r="3.5" fill="${acc}"/>`;
   const endT=p.limitAt||p.reset, endV=p.limitAt?100:Math.min(top,p.projectedAtReset);
   g+=`<path d="M${x(now)},${y(p.pct)}L${x(endT)},${y(endV)}" stroke="${acc}" stroke-width="2" stroke-dasharray="6 5" fill="none"/>`;
   g+=`<line x1="${x(now)}" x2="${x(now)}" y1="${m.t}" y2="${m.t+ih}" stroke="${css('--line-2')}"/><text class="lab" x="${x(now)}" y="${m.t-4}" text-anchor="middle">NOW</text>`;
@@ -422,6 +437,7 @@ function windowChart(id,p,span,even){
   hit.addEventListener('mousemove',e=>{
     const r=svg.getBoundingClientRect(), px=(e.clientX-r.left)*W/r.width, t=p.start+(px-m.l)/iw*(p.reset-p.start);
     let v,kind;
+    if(t<firstT){xh.style.display='none';showTip(`<span class=k>Not recorded</span>Dash took no snapshot before ${span===5*HOUR?hm(firstT):dt(firstT)}, so use in this stretch is unknown.`,e.clientX,e.clientY);return}
     if(t<=now){let best=pts[0];pts.forEach(a=>{if(Math.abs(a.t-t)<Math.abs(best.t-t))best=a});v=best.pct;kind='Recorded';xh.setAttribute('transform',`translate(${x(best.t)},0)`);xh.querySelector('circle').setAttribute('cy',y(v));showTip(`<span class=k>${kind}</span><b>${f1(v)}%</b> · ${span===5*HOUR?hm(best.t):dt(best.t)}`,e.clientX,e.clientY)}
     else{v=Math.min(p.limitAt?100:999,p.pct+p.rate*(t-now)/HOUR);kind='Projected';xh.setAttribute('transform',`translate(${x(t)},0)`);xh.querySelector('circle').setAttribute('cy',y(v));showTip(`<span class=k>${kind}</span><b>${f1(v)}%</b> · ${span===5*HOUR?hm(t):dt(t)}`,e.clientX,e.clientY)}
     xh.style.display='';
