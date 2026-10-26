@@ -349,8 +349,15 @@ async function cmdServe(o, cfg) {
         try { snap = await snapshot(acct); } catch (e) { err = e.message; }
         const hist = readJsonl(path.join(acctDir(acct), 'history.jsonl'));
         const cal = loadCal(acct);
+        // compact history for the analytics: [t, session %, session reset, weekly %, weekly reset], last 42 days
+        const since = Date.now() - 42 * 24 * HOUR;
+        const history = hist.filter(h => h.t >= since).map(h => [h.t, h.session?.pct ?? null, h.session?.reset ? Date.parse(h.session.reset) : null, h.weekly?.pct ?? null, h.weekly?.reset ? Date.parse(h.weekly.reset) : null]);
         res.setHeader('content-type', 'application/json');
-        return res.end(JSON.stringify({ accounts: accounts.map(a => ({ key: a.key, plan: a.plan, email: a.email })), account: acct.key, plan: acct.plan, snap, err, proj: snap ? project(hist, snap) : null, cal: { sizes: cal.sizes, model: cal.model, effort: cal.effort, weeklyPerSession: cal.weeklyPerSession }, now: Date.now() }));
+        return res.end(JSON.stringify({
+          accounts: accounts.map(a => ({ key: a.key, plan: a.plan, email: a.email })), account: acct.key, plan: acct.plan, tier: acct.tier,
+          snap, err, proj: snap ? project(hist, snap) : null, history, snapshots: hist.length, firstSnapshot: hist[0]?.t ?? null,
+          cal: { sizes: cal.sizes, model: cal.model, effort: cal.effort, weeklyPerSession: cal.weeklyPerSession, runs: cal.runs }, now: Date.now(),
+        }));
       }
       if (u.pathname === '/dash.png') { res.setHeader('content-type', 'image/png'); return res.end(fs.readFileSync(path.join(HERE, 'dash.png'))); }
       res.setHeader('content-type', 'text/html'); res.end(html());

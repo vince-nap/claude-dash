@@ -5,147 +5,552 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dash</title>
 <link rel="icon" href="/dash.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Rajdhani:wght@400;500;600&display=swap">
 <style>
-:root{--bg:#f7f6f3;--card:#fff;--ink:#1f1d1a;--mute:#6f6a62;--line:#e4e1da;--used:#2a6fdb;--proj:#2a6fdb;--task:#d9822b;--limit:#c93b3b;--ok:#2f8f5b;--grid:#ecebe6}
-@media (prefers-color-scheme:dark){:root{--bg:#161513;--card:#1f1e1b;--ink:#ece9e3;--mute:#9a958b;--line:#33312c;--used:#6aa3ff;--proj:#6aa3ff;--task:#f0a657;--limit:#ff6b6b;--ok:#59c38a;--grid:#2a2926}}
+/* ==========================================================================
+   Dash — usage telemetry for Claude Code.
+   Visual language after the CyberLife menus of Detroit: Become Human: white
+   panels, android blue, hairlines, corner brackets, spaced capitals, thin
+   oversized numerals, and the temple LED as status (blue stable, yellow
+   elevated, red critical — always with a word beside it).
+   ========================================================================== */
+:root{
+  color-scheme:light;
+  --bg:#eef2f5; --panel:#ffffff; --panel-2:#f5f8fa; --ink:#0c1620; --ink-2:#435463; --ink-3:#6f8090;
+  --line:rgba(14,60,95,.12); --line-2:rgba(14,60,95,.26); --grid:rgba(14,60,95,.08);
+  --accent:#0a7fd0; --accent-2:#055a96; --accent-soft:rgba(10,127,208,.09); --glow:rgba(10,127,208,.35);
+  --ok:#0a7fd0; --warn:#c48a00; --crit:#d3123e;
+  --seq-0:#e8eef3; --seq-1:#cde2fb; --seq-2:#86b6ef; --seq-3:#3987e5; --seq-4:#1c5cab; --seq-5:#0d366b;
+  --c1:#2a78d6; --c2:#eb6834; --c3:#1baf7a; --c4:#eda100; --c5:#e87ba4; --c6:#6250d6;
+  --f-num:"Rajdhani","Bahnschrift","DIN Alternate","Segoe UI",system-ui,sans-serif;
+  --f-txt:"Barlow","Segoe UI",system-ui,-apple-system,sans-serif;
+  --ease:cubic-bezier(.16,1,.3,1);
+}
+@media (prefers-color-scheme:dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme:dark;
+    --bg:#05090d; --panel:#0b131a; --panel-2:#0f1922; --ink:#e4edf4; --ink-2:#a3b4c2;
+    --ink-3:#7c8e9c; --line:rgba(120,190,240,.12); --line-2:rgba(120,190,240,.26); --grid:rgba(120,190,240,.07);
+    --accent:#38a8ff; --accent-2:#7cc6ff; --accent-soft:rgba(56,168,255,.1); --glow:rgba(56,168,255,.45);
+    --ok:#38a8ff; --warn:#f2c230; --crit:#ff4d6d;
+    --seq-0:#132029; --seq-1:#184f95; --seq-2:#256abf; --seq-3:#3987e5; --seq-4:#6da7ec; --seq-5:#b7d3f6;
+    --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181; --c6:#9085e9;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#05090d; --panel:#0b131a; --panel-2:#0f1922; --ink:#e4edf4; --ink-2:#a3b4c2; --ink-3:#7c8e9c;
+  --line:rgba(120,190,240,.12); --line-2:rgba(120,190,240,.26); --grid:rgba(120,190,240,.07);
+  --accent:#38a8ff; --accent-2:#7cc6ff; --accent-soft:rgba(56,168,255,.1); --glow:rgba(56,168,255,.45);
+  --ok:#38a8ff; --warn:#f2c230; --crit:#ff4d6d;
+  --seq-0:#132029; --seq-1:#184f95; --seq-2:#256abf; --seq-3:#3987e5; --seq-4:#6da7ec; --seq-5:#b7d3f6;
+  --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181; --c6:#9085e9;
+}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,Segoe UI,sans-serif}
-.wrap{max-width:1100px;margin:0 auto;padding:20px 16px 48px}
-header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
-h1{font-size:22px;margin:0;letter-spacing:-.01em}
-.sub{color:var(--mute);font-size:13px}
-.tabs{display:flex;gap:6px;flex-wrap:wrap}
-.tabs button,.ctl select,.ctl input{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 12px}
-.tabs button{cursor:pointer}.tabs button[aria-pressed=true]{border-color:var(--used);color:var(--used);font-weight:600}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-@media(max-width:820px){.grid{grid-template-columns:1fr}}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
-.card h2{font-size:14px;margin:0 0 2px;font-weight:600}
-.big{font-size:30px;font-weight:650;letter-spacing:-.02em}
-.kv{display:flex;flex-wrap:wrap;gap:4px 18px;color:var(--mute);font-size:12.5px;margin:2px 0 6px}
-.kv b{color:var(--ink);font-weight:600}
-svg{width:100%;height:auto;display:block}
-.ax{fill:var(--mute);font-size:11px}
-.ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:14px 0}
-.ctl label{display:flex;flex-direction:column;gap:3px;color:var(--mute);font-size:12px}
-.legend{display:flex;flex-wrap:wrap;gap:14px;color:var(--mute);font-size:12px;margin-top:6px}
-.legend i{display:inline-block;width:18px;height:0;border-top:2px solid;vertical-align:middle;margin-right:5px}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th,td{padding:5px 8px;text-align:right;border-bottom:1px solid var(--line)}th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
-th{color:var(--mute);font-weight:500}
-tr.pick td{font-weight:650}
-.fit{color:var(--ok)}.nofit{color:var(--limit)}
-.err{color:var(--limit);padding:12px}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 var(--f-txt);-webkit-font-smoothing:antialiased;min-height:100vh}
+/* the faint android grid behind everything, fading out to the edges */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:48px 48px;
+  -webkit-mask-image:radial-gradient(ellipse at 50% 20%,#000 20%,transparent 75%);mask-image:radial-gradient(ellipse at 50% 20%,#000 20%,transparent 75%)}
+.wrap{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:22px 16px 56px}
+@media(min-width:720px){.wrap{padding:26px 32px 64px}}
+
+/* ---------- header ---------- */
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:14px 24px;margin-bottom:22px}
+.brand{display:flex;align-items:center;gap:14px;margin-right:auto}
+.brand img{width:38px;height:38px;border-radius:9px}
+.brand h1{margin:0;font:600 26px/1 var(--f-num);letter-spacing:.32em}
+.brand .tag{font:500 11px/1 var(--f-num);letter-spacing:.28em;color:var(--accent);text-transform:uppercase;margin-top:5px}
+.tabs{display:flex;flex-wrap:wrap;max-width:100%;border:1px solid var(--line-2);background:var(--panel)}
+.tabs button{font:500 12px/1 var(--f-num);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2);background:none;border:0;padding:10px 14px;cursor:pointer;transition:background .3s var(--ease),color .3s}
+.tabs button+button{border-left:1px solid var(--line-2)}
+@media(max-width:640px){.tabs{width:100%}.tabs button{flex:1 1 auto}}
+.tabs button:hover{background:var(--accent-soft);color:var(--ink)}
+.tabs button[aria-pressed=true]{background:var(--ink);color:var(--panel);cursor:default}
+.tabs button small{opacity:.65;letter-spacing:.08em;margin-left:6px}
+.sync{display:flex;align-items:center;gap:12px;font:500 11.5px/1 var(--f-num);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3)}
+.live{display:inline-flex;align-items:center;gap:8px;color:var(--ink-2)}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 0 var(--glow);animation:pulse 2.4s infinite}
+.live.off i{background:var(--crit);animation:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 var(--glow)}70%{box-shadow:0 0 0 9px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.iconbtn{display:grid;place-items:center;width:34px;height:34px;border:1px solid var(--line-2);background:var(--panel);color:var(--ink-2);cursor:pointer;transition:border-color .2s,color .2s}
+.iconbtn:hover{border-color:var(--accent);color:var(--ink)}
+.iconbtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6}
+.alert{display:flex;gap:10px;align-items:flex-start;margin:0 0 18px;padding:12px 16px;border:1px solid color-mix(in srgb,var(--crit) 40%,transparent);border-left:3px solid var(--crit);background:color-mix(in srgb,var(--crit) 8%,var(--panel));color:var(--ink)}
+.alert b{font:600 11px/1.6 var(--f-num);letter-spacing:.2em;color:var(--crit)}
+
+/* ---------- grid and panels ---------- */
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
+.s3{grid-column:span 3}.s4{grid-column:span 4}.s5{grid-column:span 5}.s6{grid-column:span 6}.s7{grid-column:span 7}.s8{grid-column:span 8}.s12{grid-column:span 12}
+@media(max-width:1180px){.s3{grid-column:span 6}.s4,.s5,.s7,.s8{grid-column:span 12}.s6{grid-column:span 12}}
+@media(max-width:640px){.s3{grid-column:span 12}}
+.panel{position:relative;background:var(--panel);border:1px solid var(--line);padding:18px 20px 20px;min-width:0;
+  box-shadow:0 22px 44px -34px rgba(10,40,70,.45);transition:border-color .35s}
+.panel::before,.panel::after{content:"";position:absolute;width:12px;height:12px;border:0 solid var(--accent);opacity:.7;transition:width .45s var(--ease),height .45s var(--ease),opacity .3s;pointer-events:none}
+.panel::before{top:-1px;left:-1px;border-top-width:1px;border-left-width:1px}
+.panel::after{bottom:-1px;right:-1px;border-bottom-width:1px;border-right-width:1px}
+.panel:hover{border-color:var(--line-2)}
+.panel:hover::before,.panel:hover::after{width:26px;height:26px;opacity:1}
+.ph{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px}
+.ph h2{margin:0;display:flex;align-items:center;gap:10px;font:500 12.5px/1.2 var(--f-num);letter-spacing:.26em;text-transform:uppercase;color:var(--ink)}
+.ph h2::before{content:"//";color:var(--accent);letter-spacing:0}
+.ph .meta{font:500 11px/1.3 var(--f-num);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);text-align:right}
+.note{font-size:12px;color:var(--ink-3);margin:10px 0 0}
+.empty{display:grid;place-items:center;min-height:150px;text-align:center;color:var(--ink-3);font-size:13px;border:1px dashed var(--line-2);background:var(--panel-2);padding:16px}
+
+/* ---------- LED gauges ---------- */
+.gauge{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}
+@media(max-width:480px){.gauge{grid-template-columns:1fr;justify-items:center}}
+.ring{width:200px;height:200px;position:relative}
+.ring svg{width:100%;height:100%;overflow:visible}
+.ring .spin{transform-origin:110px 110px;animation:spin 60s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ring-c{position:absolute;inset:0;display:grid;place-items:center;align-content:center;text-align:center}
+.ring-c .v{font:400 58px/0.9 var(--f-num);letter-spacing:-.01em;color:var(--ink)}
+.ring-c .v small{font-size:22px;color:var(--ink-3);margin-left:2px}
+.ring-c .l{font:600 11px/1 var(--f-num);letter-spacing:.3em;margin-top:8px}
+.st-ok{color:var(--ok)}.st-warn{color:var(--warn)}.st-crit{color:var(--crit)}.st-none{color:var(--ink-3)}
+.facts{display:grid;gap:9px;min-width:0}
+.fact{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding-bottom:7px;font-size:13px;color:var(--ink-2)}
+.fact:last-child{border-bottom:0}
+.fact b{font:600 15px/1.2 var(--f-num);letter-spacing:.04em;color:var(--ink);text-align:right}
+
+/* ---------- forecast ---------- */
+.fc{display:grid;gap:14px}
+.fc-row .top2{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}
+.fc-row .k{font:500 11px/1.2 var(--f-num);letter-spacing:.2em;text-transform:uppercase;color:var(--ink-2)}
+.fc-row .v{font:500 20px/1 var(--f-num);color:var(--ink)}
+.fc-row .v em{font-style:normal;font-size:12px;letter-spacing:.14em;margin-left:6px}
+.track{position:relative;height:8px;background:var(--panel-2);border:1px solid var(--line)}
+.track i{position:absolute;top:0;bottom:0;left:0;border-radius:0 3px 3px 0}
+.track i.now{background:var(--accent)}
+.track i.proj{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--accent) 45%,transparent) 0 3px,transparent 3px 6px);border-right:2px solid var(--accent)}
+.track .lim{position:absolute;top:-4px;bottom:-4px;right:0;width:2px;background:var(--crit)}
+.track .pace{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink)}
+.verdict{display:flex;gap:12px;align-items:center;padding:12px 14px;border:1px solid var(--line-2);background:var(--panel-2)}
+.verdict .chev{font:600 22px/1 var(--f-num)}
+.verdict p{margin:0;font-size:13px;color:var(--ink-2)}
+.verdict p b{color:var(--ink)}
+
+/* ---------- KPI tiles ---------- */
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;border:1px solid var(--line);background:var(--panel)}
+@media(max-width:1180px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:560px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{padding:16px 18px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 -1px -1px 0;min-width:0}
+.kpi .k{font:500 10.5px/1.3 var(--f-num);letter-spacing:.22em;text-transform:uppercase;color:var(--ink-3)}
+.kpi .v{font:400 34px/1.1 var(--f-num);color:var(--ink);margin-top:6px;white-space:nowrap}
+.kpi .v small{font-size:15px;color:var(--ink-3);margin-left:3px}
+.kpi .d{font-size:12px;color:var(--ink-2);margin-top:2px}
+
+/* ---------- charts ---------- */
+.chart{position:relative}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.ax{fill:var(--ink-3);font:500 10.5px var(--f-num);letter-spacing:.06em}
+.lab{fill:var(--ink-2);font:600 11px var(--f-num);letter-spacing:.08em}
+.hit{fill:transparent;cursor:crosshair}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:12px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.sw{display:inline-block;width:14px;height:0;border-top:2px solid}
+.sw.blk{width:10px;height:10px;border:0;border-radius:2px}
+.cal{display:grid;grid-template-columns:28px repeat(7,minmax(0,1fr));gap:3px}
+.cal .dh{font:500 10px/1 var(--f-num);letter-spacing:.18em;color:var(--ink-3);text-align:center;padding-bottom:4px}
+.cal .wk{font:500 10px/1 var(--f-num);color:var(--ink-3);display:grid;align-items:center}
+.cal .c{position:relative;aspect-ratio:1.25;min-height:30px;border-radius:2px;background:var(--seq-0);padding:4px 5px;font:500 10.5px/1 var(--f-num);color:var(--ink-2);cursor:default;transition:transform .2s var(--ease)}
+.cal .c:hover{transform:scale(1.06);z-index:1}
+.cal .c.future{background:transparent;border:1px dashed var(--line);color:var(--ink-3)}
+.cal .c.today{outline:2px solid var(--accent);outline-offset:1px}
+.cal .c.q1{background:var(--seq-1)}.cal .c.q2{background:var(--seq-2)}.cal .c.q3{background:var(--seq-3);color:#fff}.cal .c.q4{background:var(--seq-4);color:#fff}.cal .c.q5{background:var(--seq-5);color:#fff}
+:root[data-theme="dark"] .cal .c.q4,:root[data-theme="dark"] .cal .c.q5{color:#05090d}
+@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])) .cal .c.q4,:root:where(:not([data-theme="light"])) .cal .c.q5{color:#05090d}}
+.cal .c b{position:absolute;right:5px;bottom:4px;font-weight:600;font-size:10.5px}
+.scale{display:flex;align-items:center;gap:4px;margin-top:10px;font-size:11.5px;color:var(--ink-3)}
+.scale i{width:14px;height:10px;border-radius:2px}
+.donut{display:grid;grid-template-columns:150px 1fr;gap:18px;align-items:center}
+@media(max-width:480px){.donut{grid-template-columns:1fr;justify-items:center}}
+.rows{display:grid;gap:9px}
+.row .top2{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--ink-2);margin-bottom:5px}
+.row .top2 b{font:600 14px/1 var(--f-num);color:var(--ink)}
+.hbar{height:6px;background:var(--panel-2);border:1px solid var(--line);position:relative}
+.hbar i{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:0 3px 3px 0}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{font:500 10.5px/1.2 var(--f-num);letter-spacing:.2em;text-transform:uppercase;color:var(--accent);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line-2);position:sticky;top:0;background:var(--panel)}
+td{padding:7px 10px;border-bottom:1px solid var(--line);color:var(--ink-2);font-variant-numeric:tabular-nums}
+td.n,th.n{text-align:right}
+tbody tr:hover td{background:var(--accent-soft)}
+.scroll{max-height:340px;overflow:auto;border:1px solid var(--line)}
+details.log summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px}
+details.log summary::-webkit-details-marker{display:none}
+details.log summary .ph{margin:0;flex:1}
+details.log[open] summary{margin-bottom:12px}
+.btn{font:500 11px/1 var(--f-num);letter-spacing:.2em;text-transform:uppercase;padding:9px 14px;border:1px solid var(--line-2);background:var(--panel);color:var(--ink);cursor:pointer;transition:border-color .2s,background .2s}
+.btn:hover{border-color:var(--accent);background:var(--accent-soft)}
+.tip{position:fixed;z-index:50;pointer-events:none;padding:8px 11px;background:var(--panel);border:1px solid var(--line-2);border-top:2px solid var(--accent);color:var(--ink);font-size:12.5px;line-height:1.45;box-shadow:0 14px 30px -14px rgba(10,40,70,.45);max-width:280px;opacity:0;transform:translateY(4px);transition:opacity .12s,transform .12s}
+.tip.on{opacity:1;transform:none}
+.tip b{font:600 13px var(--f-num);letter-spacing:.04em}
+.tip .k{display:block;font:500 10px/1.4 var(--f-num);letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3)}
+footer{margin-top:22px;display:flex;flex-wrap:wrap;gap:6px 20px;justify-content:space-between;font:500 11px/1.4 var(--f-num);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.reveal{animation:rise .7s var(--ease) both}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <div><h1>Dash</h1><div class="sub" id="sub">loading…</div></div>
-    <div class="tabs" id="tabs"></div>
-  </header>
-  <div id="err" class="err" hidden></div>
-  <div class="grid">
-    <section class="card"><h2>Session · 5 hours</h2><div class="big" id="sBig"></div><div class="kv" id="sKv"></div><div id="sChart"></div></section>
-    <section class="card"><h2>Weekly · 7 days</h2><div class="big" id="wBig"></div><div class="kv" id="wKv"></div><div id="wChart"></div></section>
-  </div>
-  <div class="legend">
-    <span><i style="border-color:var(--used)"></i>consumed</span>
-    <span><i style="border-color:var(--proj);border-top-style:dashed"></i>projected at current burn</span>
-    <span><i style="border-color:var(--task)"></i>planned task</span>
-    <span><i style="border-color:var(--limit);border-top-style:dashed"></i>limit (100%)</span>
-  </div>
-
-  <section class="card" style="margin-top:14px">
-    <h2>Plan a task</h2>
-    <div class="ctl">
-      <label>Size<select id="size"></select></label>
-      <label>Agents<input id="agents" type="number" min="1" max="50" value="1" style="width:80px"></label>
-      <label>Model<select id="model"></select></label>
-      <label>Effort<select id="effort"></select></label>
+  <header class="top">
+    <div class="brand">
+      <img src="/dash.png" alt="">
+      <div><h1>DASH</h1><div class="tag">Usage telemetry · Claude Code</div></div>
     </div>
-    <table id="opts"></table>
-    <div class="sub" style="margin-top:8px" id="note"></div>
-  </section>
-</div>
-<script>
-const $=id=>document.getElementById(id), HOUR=3600e3, q=new URLSearchParams(location.search);
-let D=null, account=q.get('account')||'';
-const fT=ms=>new Date(ms).toLocaleString([],{weekday:'short',hour:'2-digit',minute:'2-digit'});
-const fIn=ms=>{const m=Math.round(ms/6e4);return m<60?m+'m':m<2880?(m/60).toFixed(1)+'h':(m/1440).toFixed(1)+'d'};
-const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    <div class="tabs" id="tabs" role="group" aria-label="Account"></div>
+    <div class="sync">
+      <span class="live" id="live"><i></i><span id="liveTxt">Connecting</span></span>
+      <span id="next"></span>
+      <button class="iconbtn" id="refresh" title="Refresh now" aria-label="Refresh now"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
+      <button class="iconbtn" id="theme" title="Theme" aria-label="Switch theme"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg></button>
+    </div>
+  </header>
+  <div class="alert" id="alert" hidden role="alert"><b>SIGNAL LOST</b><span id="alertTxt"></span></div>
 
-function estimate(size,model,effort,agents){
-  const c=D.cal, s=c.sizes[size]*c.model[model]*c.effort[effort]*agents*(agents>1?1.15:1);
-  return {s,w:s*c.weeklyPerSession};
+  <main class="grid" id="main">
+    <section class="panel s4 reveal"><div class="ph"><h2>Session</h2><span class="meta">5-hour window</span></div><div id="gS"></div></section>
+    <section class="panel s4 reveal"><div class="ph"><h2>Weekly</h2><span class="meta">7-day window</span></div><div id="gW"></div></section>
+    <section class="panel s4 reveal"><div class="ph"><h2>Forecast</h2><span class="meta" id="fcMeta"></span></div><div id="fc"></div></section>
+
+    <section class="s12 reveal"><div class="kpis" id="kpis"></div></section>
+
+    <section class="panel s6 reveal"><div class="ph"><h2>Session window</h2><span class="meta" id="cSm"></span></div><div class="chart" id="cS"></div>
+      <div class="legend"><span><i class="sw" style="border-color:var(--accent)"></i>Consumed</span><span><i class="sw" style="border-color:var(--accent);border-top-style:dashed"></i>Projected at current burn</span><span><i class="sw" style="border-color:var(--crit)"></i>Limit</span></div></section>
+    <section class="panel s6 reveal"><div class="ph"><h2>Weekly window</h2><span class="meta" id="cWm"></span></div><div class="chart" id="cW"></div>
+      <div class="legend"><span><i class="sw" style="border-color:var(--accent)"></i>Consumed</span><span><i class="sw" style="border-color:var(--accent);border-top-style:dashed"></i>Projected at current burn</span><span><i class="sw" style="border-color:var(--ink-3)"></i>Even pace</span><span><i class="sw" style="border-color:var(--crit)"></i>Limit</span></div></section>
+
+    <section class="panel s7 reveal"><div class="ph"><h2>Daily consumption</h2><span class="meta">Weekly % per day · 14 days</span></div><div class="chart" id="cD"></div><p class="note" id="cDn"></p></section>
+    <section class="panel s5 reveal"><div class="ph"><h2>Calendar</h2><span class="meta" id="calM">Last 6 weeks</span></div><div id="cal"></div></section>
+
+    <section class="panel s6 reveal"><div class="ph"><h2>Session peaks</h2><span class="meta">Highest % per 5-hour window</span></div><div class="chart" id="cP"></div></section>
+    <section class="panel s6 reveal"><div class="ph"><h2>Rhythm</h2><span class="meta">Session % by hour of day</span></div><div class="chart" id="cH"></div></section>
+
+    <section class="panel s4 reveal"><div class="ph"><h2>By surface</h2><span class="meta">Share of weekly use</span></div><div id="srf"></div></section>
+    <section class="panel s4 reveal"><div class="ph"><h2>Model limits</h2><span class="meta">Scoped weekly</span></div><div id="mdl"></div></section>
+    <section class="panel s4 reveal"><div class="ph"><h2>Cost model</h2><span class="meta" id="calibM"></span></div><div id="cost"></div></section>
+
+    <section class="panel s12 reveal">
+      <details class="log" id="logD">
+        <summary><div class="ph"><h2>Telemetry log</h2><span class="meta" id="logM"></span></div><button class="btn" id="csv" type="button">Export CSV</button></summary>
+        <div class="scroll"><table id="log"></table></div>
+      </details>
+    </section>
+  </main>
+  <footer><span id="ftL"></span><span>Source: Claude Code usage endpoint · unofficial</span></footer>
+</div>
+<div class="tip" id="tip" role="tooltip"></div>
+<script>
+const $=id=>document.getElementById(id), HOUR=3600e3, DAY=24*HOUR, q=new URLSearchParams(location.search);
+let D=null, account=q.get('account')||'', lastLoad=0, charts={};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const hm=t=>new Date(t).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+const dd=t=>new Date(t).toLocaleDateString([],{weekday:'short',day:'numeric',month:'short'});
+const dt=t=>new Date(t).toLocaleString([],{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+const fIn=ms=>{if(ms<0)return'now';const m=Math.round(ms/6e4);return m<60?m+'m':m<2880?Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m':(m/1440).toFixed(1)+'d'};
+const f1=v=>v==null||!isFinite(v)?'—':(Math.round(v*10)/10).toLocaleString();
+const dayKey=t=>{const d=new Date(t);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};
+
+/* ---------- status: the temple LED ---------- */
+function state(p){
+  if(!p) return {k:'none',label:'NO DATA',word:'No data'};
+  if(p.limitAt||p.pct>=90) return {k:'crit',label:'CRITICAL',word:p.limitAt?'Limit before reset':'Near limit'};
+  if(p.projectedAtReset>=80||p.pct>=70) return {k:'warn',label:'ELEVATED',word:'Running hot'};
+  return {k:'ok',label:'STABLE',word:'Within budget'};
 }
-function chart(el,p,taskPct,span){
-  if(!p){el.innerHTML='<div class="sub">No limit data for this plan.</div>';return}
-  const W=520,H=250,m={l:38,r:14,t:14,b:26},iw=W-m.l-m.r,ih=H-m.t-m.b;
-  const x=t=>m.l+(t-p.start)/(p.reset-p.start)*iw, y=v=>m.t+ih-(Math.min(v,115)/115)*ih;
-  const now=D.now;
-  let g='';
-  for(const v of [0,25,50,75,100]) g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}" stroke="${css('--grid')}"/><text class="ax" x="${m.l-6}" y="${y(v)+4}" text-anchor="end">${v}%</text>`;
-  const ticks=span===5*HOUR?5:7;
-  for(let i=0;i<=ticks;i++){const t=p.start+(p.reset-p.start)*i/ticks;g+=`<text class="ax" x="${x(t)}" y="${H-8}" text-anchor="${i==0?'start':i==ticks?'end':'middle'}">${span===5*HOUR?new Date(t).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):new Date(t).toLocaleDateString([],{weekday:'short'})}</text>`}
-  g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y(100)}" y2="${y(100)}" stroke="${css('--limit')}" stroke-dasharray="5 4"/>`;
-  // consumed
-  const pts=[{t:p.start,pct:0},...p.points.filter(a=>a.t<=now),{t:now,pct:p.pct}];
-  const line=pts.map((a,i)=>`${i?'L':'M'}${x(a.t)},${y(a.pct)}`).join('');
-  g+=`<path d="${line}L${x(now)},${y(0)}L${x(p.start)},${y(0)}Z" fill="${css('--used')}" opacity=".12"/><path d="${line}" fill="none" stroke="${css('--used')}" stroke-width="2.2"/>`;
-  // projection (capped where it hits 100)
-  const endT=p.limitAt||p.reset, endV=p.limitAt?100:Math.min(100,p.projectedAtReset);
-  g+=`<path d="M${x(now)},${y(p.pct)}L${x(endT)},${y(endV)}" stroke="${css('--proj')}" stroke-width="2" stroke-dasharray="6 4" fill="none"/>`;
-  // task overlay: step at now
-  let tEnd=null;
-  if(taskPct>0){tEnd=p.pct+taskPct;
-    g+=`<path d="M${x(now)},${y(p.pct)}L${x(now)},${y(tEnd)}" stroke="${css('--task')}" stroke-width="5" stroke-linecap="round"/>`;
-    g+=`<path d="M${x(now)},${y(tEnd)}L${x(p.reset)},${y(Math.min(115,tEnd+Math.max(0,p.projectedAtReset-p.pct)))}" stroke="${css('--task')}" stroke-width="1.8" stroke-dasharray="3 4" fill="none"/>`;
-    g+=`<text class="ax" x="${x(now)+8}" y="${y(tEnd)-4}" fill="${css('--task')}" style="fill:${css('--task')}">${tEnd>100?'over by '+(tEnd-100).toFixed(0)+'%':'+'+taskPct.toFixed(1)+'%'}</text>`}
-  g+=`<line x1="${x(now)}" x2="${x(now)}" y1="${m.t}" y2="${m.t+ih}" stroke="${css('--mute')}" stroke-dasharray="2 3"/><text class="ax" x="${x(now)}" y="${m.t-3}" text-anchor="middle">now</text>`;
-  if(p.limitAt) g+=`<circle cx="${x(p.limitAt)}" cy="${y(100)}" r="4.5" fill="${css('--limit')}"/><text class="ax" x="${x(p.limitAt)-6}" y="${y(100)-8}" text-anchor="end" style="fill:${css('--limit')}">limit ${fT(p.limitAt)}</text>`;
-  g+=`<line x1="${W-m.r}" x2="${W-m.r}" y1="${m.t}" y2="${m.t+ih}" stroke="${css('--ok')}" stroke-width="2"/>`;
-  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="usage chart">${g}</svg>`;
-}
-function render(){
-  const s=D.proj?.session, w=D.proj?.weekly;
-  const a=D.accounts.find(a=>a.key===D.account);
-  $('sub').textContent=`${a?.email||D.account} · ${D.plan} · updated ${new Date(D.now).toLocaleTimeString()}`;
-  $('tabs').innerHTML=D.accounts.map(a=>`<button aria-pressed="${a.key===D.account}" data-k="${a.key}">${a.key} · ${a.plan}</button>`).join('');
-  $('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{account=b.dataset.k;load()});
-  $('err').hidden=!D.err; $('err').textContent=D.err||'';
-  const kv=(p,span)=>p?`<span>burn <b>${p.rate.toFixed(1)}%/h</b> (${p.basis})</span><span>projected at reset <b>${Math.min(999,p.projectedAtReset).toFixed(0)}%</b></span><span>${p.limitAt?`limit hit <b style="color:var(--limit)">${fT(p.limitAt)}</b> (in ${fIn(p.limitAt-D.now)})`:'<b style="color:var(--ok)">no limit hit before reset</b>'}</span><span>resets <b>${fT(p.reset)}</b> (in ${fIn(p.reset-D.now)})</span>`:'';
-  $('sBig').textContent=s?s.pct+'%':'—'; $('wBig').textContent=w?w.pct+'%':'—';
-  $('sKv').innerHTML=kv(s); $('wKv').innerHTML=kv(w);
-  const t=cur();
-  chart($('sChart'),s,t?.s||0,5*HOUR); chart($('wChart'),w,t?.w||0,7*24*HOUR);
-  table();
-}
-function cur(){ if(!D?.cal) return null; return estimate($('size').value,$('model').value,$('effort').value,Math.max(1,+$('agents').value||1)) }
-function table(){
-  if(!D.proj?.session){ $('opts').innerHTML=''; return }
-  const s=D.proj.session,w=D.proj.weekly,size=$('size').value,ag=Math.max(1,+$('agents').value||1);
-  let h='<tr><th>Model</th><th>Effort</th><th>Session</th><th>Week</th><th>Verdict</th></tr>';
-  for(const m of Object.keys(D.cal.model)) for(const e of ['low','medium','high','max']){
-    const c=estimate(size,m,e,ag), fs=s.pct+c.s<=100, fw=w.projectedAtReset+c.w<=100;
-    const sel=m===$('model').value&&e===$('effort').value;
-    h+=`<tr class="${sel?'pick':''}"><td>${m}</td><td>${e}</td><td>${c.s.toFixed(1)}%</td><td>${c.w.toFixed(1)}%</td><td class="${fs&&fw?'fit':'nofit'}">${fs&&fw?'fits':!fs?'exceeds session':'tight for week'}</td></tr>`;
+
+/* ---------- derived analytics from the history ---------- */
+// rows: [t, sPct, sReset, wPct, wReset]. An increment is credited to the snapshot that observed it.
+function increments(idxP,idxR){
+  const h=(D.history||[]).filter(r=>r[idxP]!=null).sort((a,b)=>a[0]-b[0]), out=[];
+  for(let i=1;i<h.length;i++){
+    const a=h[i-1],b=h[i];
+    const same=a[idxR]&&b[idxR]&&Math.abs(a[idxR]-b[idxR])<120e3;
+    const d=same?b[idxP]-a[idxP]:b[idxP];
+    if(d>0) out.push({t:b[0],d});
   }
-  $('opts').innerHTML=h;
-  const per=estimate(size,$('model').value,$('effort').value,1).s*1.15;
-  $('note').textContent=`Agents that fit this session at ${$('model').value}/${$('effort').value} with 20% headroom: ${Math.max(1,Math.floor((100-s.pct)*.8/per))}. Estimates are seeded and recalibrate as you run \`dash done\`.`;
+  return out;
 }
-function fill(sel,items,v){ if(!sel.options.length){sel.innerHTML=items.map(i=>`<option>${i}</option>`).join('');sel.value=v} }
+function daily(days){
+  const inc=increments(3,4), map={};
+  inc.forEach(x=>{const k=dayKey(x.t);map[k]=(map[k]||0)+x.d});
+  const out=[], t0=new Date(); t0.setHours(12,0,0,0);
+  for(let i=days-1;i>=0;i--){const t=t0.getTime()-i*DAY;out.push({t,v:map[dayKey(t)]||0})}
+  return out;
+}
+function sessionPeaks(n){
+  const by={};
+  (D.history||[]).forEach(r=>{if(r[1]==null||!r[2])return;const k=Math.round(r[2]/6e4);if(!by[k]||r[1]>by[k].v)by[k]={reset:r[2],v:r[1]}});
+  if(D.proj?.session){const p=D.proj.session,k=Math.round(p.reset/6e4);if(!by[k]||p.pct>by[k].v)by[k]={reset:p.reset,v:p.pct}}
+  return Object.values(by).sort((a,b)=>a.reset-b.reset).slice(-n);
+}
+function hourly(){const b=Array(24).fill(0);increments(1,2).forEach(x=>{b[new Date(x.t).getHours()]+=x.d});return b}
+
+/* ---------- tooltip ---------- */
+const tip=$('tip');
+function showTip(html,x,y){tip.innerHTML=html;tip.classList.add('on');const w=tip.offsetWidth,h=tip.offsetHeight;tip.style.left=Math.min(x+16,innerWidth-w-10)+'px';tip.style.top=(y+h+24>innerHeight?y-h-14:y+16)+'px'}
+function hideTip(){tip.classList.remove('on')}
+document.addEventListener('mousemove',e=>{const t=e.target.closest&&e.target.closest('[data-tip]');if(t)showTip(t.dataset.tip,e.clientX,e.clientY);else if(!e.target.closest('.hit'))hideTip()});
+
+/* ---------- LED ring gauge ---------- */
+function ring(p,st){
+  const C=110,R=86,N=60,seg=360/N,gap=1.8;
+  const used=p?Math.round(Math.min(100,p.pct)/100*N):0, proj=p?Math.round(Math.min(100,Math.max(p.pct,p.projectedAtReset))/100*N):0;
+  const col=css('--'+(st.k==='none'?'ink-3':st.k)), track=css('--line');
+  const arc=(a0,a1,r,w)=>{const s=(a0-90)*Math.PI/180,e=(a1-90)*Math.PI/180;return `<path d="M${C+r*Math.cos(s)},${C+r*Math.sin(s)}A${r},${r} 0 0 1 ${C+r*Math.cos(e)},${C+r*Math.sin(e)}" stroke-width="${w}" fill="none"/>`};
+  let g='';
+  for(let i=0;i<N;i++){
+    const a0=i*seg+gap/2,a1=(i+1)*seg-gap/2;
+    const on=i<used, pr=!on&&i<proj;
+    g+=`<g stroke="${on||pr?col:track}" opacity="${pr?.35:1}" ${on?`style="filter:drop-shadow(0 0 3px ${col})"`:''}>${arc(a0,a1,R,12)}</g>`;
+  }
+  let ticks='';for(let i=0;i<72;i++){const a=i*5*Math.PI/180,r1=i%6?101:98,r2=104;ticks+=`<line x1="${C+r1*Math.cos(a)}" y1="${C+r1*Math.sin(a)}" x2="${C+r2*Math.cos(a)}" y2="${C+r2*Math.sin(a)}" stroke="${css('--line-2')}" stroke-width="1"/>`}
+  const label=p?`${p.pct}% used, projected ${Math.round(p.projectedAtReset)}% at reset, ${st.label}`:'no data';
+  return `<div class="ring" role="img" aria-label="${esc(label)}"><svg viewBox="0 0 220 220"><g class="spin">${ticks}</g>${g}<circle cx="${C}" cy="${C}" r="70" fill="none" stroke="${css('--line')}"/></svg>
+    <div class="ring-c"><div class="v">${p?p.pct:'—'}<small>%</small></div><div class="l st-${st.k}">${st.label}</div></div></div>`;
+}
+function gauge(el,p,span){
+  const st=state(p);
+  if(!p){el.innerHTML=`<div class="gauge">${ring(null,st)}<div class="facts"><div class="fact">No limit data for this plan.</div></div></div>`;return}
+  const elapsed=(D.now-p.start)/(p.reset-p.start);
+  el.innerHTML=`<div class="gauge">${ring(p,st)}<div class="facts">
+    <div class="fact">Status<b class="st-${st.k}">${st.word}</b></div>
+    <div class="fact">Burn rate<b>${f1(p.rate)}%/h</b></div>
+    <div class="fact">At reset<b>${Math.round(Math.min(999,p.projectedAtReset))}%</b></div>
+    <div class="fact">Limit at<b class="${p.limitAt?'st-crit':''}">${p.limitAt?hm(p.limitAt)+' · in '+fIn(p.limitAt-D.now):'Not before reset'}</b></div>
+    <div class="fact">Resets<b>${span===5*HOUR?hm(p.reset):new Date(p.reset).toLocaleDateString([],{weekday:'short'})+' '+hm(p.reset)} · ${fIn(p.reset-D.now)}</b></div>
+    <div class="fact">Window elapsed<b>${Math.round(elapsed*100)}%</b></div></div></div>`;
+}
+
+/* ---------- forecast ---------- */
+function forecast(){
+  const s=D.proj?.session,w=D.proj?.weekly,el=$('fc');
+  if(!s||!w){el.innerHTML='<div class="empty">No limits on this plan — nothing to forecast.</div>';return}
+  const wps=D.cal?.weeklyPerSession||0.12;
+  const daysLeft=Math.max(0.05,(w.reset-D.now)/DAY), free=Math.max(0,100-w.pct);
+  const budget=free/daysLeft, pace=w.rate*24;
+  const evenNow=(D.now-w.start)/(w.reset-w.start)*100, ahead=w.pct-evenNow;
+  const fullSessions=free/(100*wps);
+  const row=(k,v,p,pr,extra)=>`<div class="fc-row"><div class="top2"><span class="k">${k}</span><span class="v">${v}</span></div><div class="track">${pr!=null?`<i class="proj" style="width:${Math.min(100,pr)}%"></i>`:''}<i class="now" style="width:${Math.min(100,p)}%"></i>${extra||''}<span class="lim"></span></div></div>`;
+  const ws=state(w), ss=state(s), worst=[ws,ss].find(x=>x.k==='crit')||[ws,ss].find(x=>x.k==='warn')||ws, chev=worst.k==='ok'?(ahead>2?'▲':ahead<-2?'▼':'■'):'▲';
+  $('fcMeta').textContent='at current burn';
+  el.innerHTML=`<div class="fc">
+    ${row('Session at reset',Math.round(s.projectedAtReset)+'%',s.pct,s.projectedAtReset)}
+    ${row('Weekly at reset',Math.round(w.projectedAtReset)+'%',w.pct,w.projectedAtReset,`<span class="pace" style="left:${Math.min(100,evenNow)}%" data-tip="<span class=k>Even pace now</span><b>${Math.round(evenNow)}%</b>"></span>`)}
+    <div class="verdict"><span class="chev st-${worst.k}">${chev}</span><p>${w.limitAt?`<b class=st-crit>Weekly limit projected ${dt(w.limitAt)}</b> at the current burn. `:s.limitAt?`<b class=st-crit>Session limit projected ${hm(s.limitAt)}</b> at the current burn. `:''}${ahead>2?`<b>${f1(ahead)} pts ahead</b> of an even weekly pace.`:ahead<-2?`<b>${f1(-ahead)} pts below</b> an even weekly pace.`:'<b>On pace</b> with an even weekly spend.'}
+      Budget <b>${f1(budget)}%/day</b> for ${f1(daysLeft)} days vs. current pace <b>${f1(pace)}%/day</b> · ≈ <b>${f1(fullSessions)}</b> full sessions left this week.</p></div></div>`;
+}
+
+/* ---------- KPI strip ---------- */
+function kpis(){
+  const s=D.proj?.session,w=D.proj?.weekly,d=daily(7),avg=d.reduce((a,b)=>a+b.v,0)/7;
+  const free=w?Math.max(0,100-w.pct):null, daysLeft=w?Math.max(.05,(w.reset-D.now)/DAY):null;
+  const tile=(k,v,u,sub)=>`<div class="kpi"><div class="k">${k}</div><div class="v">${v}${u?`<small>${u}</small>`:''}</div><div class="d">${sub||'&nbsp;'}</div></div>`;
+  $('kpis').innerHTML=
+    tile('Session burn',s?f1(s.rate):'—','%/h',s?s.basis:'')+
+    tile('Weekly burn',w?f1(w.rate*24):'—','%/day',w?f1(w.rate)+'%/h · '+w.basis:'')+
+    tile('Session reset',s?fIn(s.reset-D.now):'—','',s?'at '+hm(s.reset):'')+
+    tile('Weekly reset',w?fIn(w.reset-D.now):'—','',w?dd(w.reset)+' '+hm(w.reset):'')+
+    tile('Daily budget',w?f1(free/daysLeft):'—','%/day',w?f1(free)+'% left of the week':'')+
+    tile('7-day average',f1(avg),'%/day',(D.snapshots||0).toLocaleString()+' snapshots recorded');
+}
+
+/* ---------- window line charts ---------- */
+function windowChart(id,p,span,even){
+  const el=$(id);
+  if(!p){el.innerHTML='<div class="empty">No limit data for this plan.</div>';return}
+  const W=Math.max(320,el.clientWidth),H=Math.round(Math.min(300,Math.max(210,W*.42))),m={l:40,r:16,t:16,b:28},iw=W-m.l-m.r,ih=H-m.t-m.b;
+  const top=Math.max(100,Math.min(140,Math.ceil(p.projectedAtReset/10)*10));
+  const x=t=>m.l+(t-p.start)/(p.reset-p.start)*iw, y=v=>m.t+ih-(Math.min(v,top)/top)*ih, now=D.now;
+  let g='';
+  for(let v=0;v<=top;v+=25){g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}" stroke="${css('--grid')}"/><text class="ax" x="${m.l-8}" y="${y(v)+4}" text-anchor="end">${v}%</text>`}
+  const n=span===5*HOUR?5:7;
+  for(let i=0;i<=n;i++){const t=p.start+(p.reset-p.start)*i/n;g+=`<text class="ax" x="${x(t)}" y="${H-8}" text-anchor="${i==0?'start':i==n?'end':'middle'}">${span===5*HOUR?hm(t):new Date(t).toLocaleDateString([],{weekday:'short'})}</text>`}
+  if(even) g+=`<line x1="${x(p.start)}" y1="${y(0)}" x2="${x(p.reset)}" y2="${y(100)}" stroke="${css('--ink-3')}" stroke-width="1" opacity=".55"/>`;
+  g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y(100)}" y2="${y(100)}" stroke="${css('--crit')}" stroke-width="1.5"/><text class="ax" x="${W-m.r}" y="${y(100)-6}" text-anchor="end" style="fill:${css('--crit')}">LIMIT</text>`;
+  const pts=[{t:p.start,pct:0},...p.points.filter(a=>a.t<=now&&a.t>=p.start),{t:now,pct:p.pct}].sort((a,b)=>a.t-b.t);
+  const line=pts.map((a,i)=>`${i?'L':'M'}${x(a.t).toFixed(1)},${y(a.pct).toFixed(1)}`).join('');
+  const acc=css('--accent');
+  g+=`<defs><linearGradient id="gr${id}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${acc}" stop-opacity=".28"/><stop offset="1" stop-color="${acc}" stop-opacity="0"/></linearGradient></defs>`;
+  g+=`<path d="${line}L${x(now)},${y(0)}L${x(p.start)},${y(0)}Z" fill="url(#gr${id})"/><path d="${line}" fill="none" stroke="${acc}" stroke-width="2" stroke-linejoin="round"/>`;
+  const endT=p.limitAt||p.reset, endV=p.limitAt?100:Math.min(top,p.projectedAtReset);
+  g+=`<path d="M${x(now)},${y(p.pct)}L${x(endT)},${y(endV)}" stroke="${acc}" stroke-width="2" stroke-dasharray="6 5" fill="none"/>`;
+  g+=`<line x1="${x(now)}" x2="${x(now)}" y1="${m.t}" y2="${m.t+ih}" stroke="${css('--line-2')}"/><text class="lab" x="${x(now)}" y="${m.t-4}" text-anchor="middle">NOW</text>`;
+  g+=`<circle cx="${x(now)}" cy="${y(p.pct)}" r="5" fill="${acc}" stroke="${css('--panel')}" stroke-width="2"/><text class="lab" x="${x(now)-9}" y="${y(p.pct)-10}" text-anchor="end">${p.pct}%</text>`;
+  if(p.limitAt) g+=`<circle cx="${x(p.limitAt)}" cy="${y(100)}" r="5" fill="${css('--crit')}" stroke="${css('--panel')}" stroke-width="2"/>`;
+  g+=`<g id="xh${id}" style="display:none"><line y1="${m.t}" y2="${m.t+ih}" stroke="${css('--ink-3')}"/><circle r="4.5" fill="${css('--panel')}" stroke="${acc}" stroke-width="2"/></g>`;
+  g+=`<rect class="hit" x="${m.l}" y="${m.t}" width="${iw}" height="${ih}"/>`;
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc((span===5*HOUR?'Session':'Weekly')+' usage: '+p.pct+'% now, projected '+Math.round(p.projectedAtReset)+'% at reset')}">${g}</svg>`;
+  const svg=el.querySelector('svg'), xh=svg.querySelector('#xh'+id), hit=svg.querySelector('.hit');
+  hit.addEventListener('mousemove',e=>{
+    const r=svg.getBoundingClientRect(), px=(e.clientX-r.left)*W/r.width, t=p.start+(px-m.l)/iw*(p.reset-p.start);
+    let v,kind;
+    if(t<=now){let best=pts[0];pts.forEach(a=>{if(Math.abs(a.t-t)<Math.abs(best.t-t))best=a});v=best.pct;kind='Recorded';xh.setAttribute('transform',`translate(${x(best.t)},0)`);xh.querySelector('circle').setAttribute('cy',y(v));showTip(`<span class=k>${kind}</span><b>${f1(v)}%</b> · ${span===5*HOUR?hm(best.t):dt(best.t)}`,e.clientX,e.clientY)}
+    else{v=Math.min(p.limitAt?100:999,p.pct+p.rate*(t-now)/HOUR);kind='Projected';xh.setAttribute('transform',`translate(${x(t)},0)`);xh.querySelector('circle').setAttribute('cy',y(v));showTip(`<span class=k>${kind}</span><b>${f1(v)}%</b> · ${span===5*HOUR?hm(t):dt(t)}`,e.clientX,e.clientY)}
+    xh.style.display='';
+  });
+  hit.addEventListener('mouseleave',()=>{xh.style.display='none';hideTip()});
+}
+
+/* ---------- vertical bars (one series, one colour) ---------- */
+function bars(el,items,o){
+  const W=Math.max(300,el.clientWidth),H=o.h||220,m={l:40,r:10,t:18,b:28},iw=W-m.l-m.r,ih=H-m.t-m.b;
+  const max=Math.max(o.min||1,...items.map(i=>i.v),...(o.refs||[]).map(r=>r.v))*1.12;
+  const y=v=>m.t+ih-(v/max)*ih, bw=iw/items.length, gap=Math.max(2,Math.min(8,bw*.28));
+  let g='';
+  const step=max>40?20:max>20?10:max>8?4:max>4?2:1;
+  for(let v=0;v<=max;v+=step) g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}" stroke="${css('--grid')}"/><text class="ax" x="${m.l-8}" y="${y(v)+4}" text-anchor="end">${v}${o.unit||''}</text>`;
+  items.forEach((it,i)=>{
+    const w=Math.min(bw-gap,56), x0=m.l+i*bw+(bw-w)/2, h=Math.max(it.v>0?2:0,ih-(y(it.v)-m.t)), yt=m.t+ih-h, r=Math.min(4,w/2,h);
+    const col=css('--'+(it.c||'accent'));
+    if(h>0) g+=`<path d="M${x0},${m.t+ih}V${yt+r}Q${x0},${yt} ${x0+r},${yt}H${x0+w-r}Q${x0+w},${yt} ${x0+w},${yt+r}V${m.t+ih}Z" fill="${col}" opacity="${it.dim?.45:1}"/>`;
+    g+=`<rect x="${m.l+i*bw}" y="${m.t}" width="${bw}" height="${ih}" fill="transparent" data-tip="${esc(it.tip)}"/>`;
+    if(it.label&&(i%(o.every||1)===0||i===items.length-1)) g+=`<text class="ax" x="${x0+w/2}" y="${H-8}" text-anchor="middle">${esc(it.label)}</text>`;
+    if(it.top) g+=`<text class="lab" x="${x0+w/2}" y="${yt-6}" text-anchor="middle">${esc(it.top)}</text>`;
+  });
+  (o.refs||[]).forEach(r=>{g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y(r.v)}" y2="${y(r.v)}" stroke="${css(r.c||'--ink-3')}" stroke-width="1.5" ${r.dash?'stroke-dasharray="5 4"':''}/><text class="ax" x="${W-m.r}" y="${y(r.v)-5}" text-anchor="end" style="fill:${css(r.c||'--ink-2')}">${esc(r.label)}</text>`});
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.aria)}">${g}</svg>`;
+}
+
+function dailyChart(){
+  const d=daily(14), w=D.proj?.weekly, budget=w?Math.max(0,100-w.pct)/Math.max(.05,(w.reset-D.now)/DAY):null;
+  const avg=d.reduce((a,b)=>a+b.v,0)/d.length;
+  const today=dayKey(Date.now());
+  bars($('cD'),d.map(x=>({v:x.v,label:new Date(x.t).toLocaleDateString([],{day:'numeric'}),dim:dayKey(x.t)===today,tip:`<span class=k>${dd(x.t)}${dayKey(x.t)===today?' · so far':''}</span><b>${f1(x.v)}%</b> of the weekly limit`})),
+    {unit:'%',min:4,aria:'Weekly percentage used per day, last 14 days',refs:[...(avg>0?[{v:avg,label:'avg '+f1(avg)+'%',c:'--ink-3'}]:[]),...(budget!=null?[{v:budget,label:'budget '+f1(budget)+'%/day',c:'--warn',dash:1}]:[])]});
+  const seen=d.filter(x=>x.v>0).length;
+  $('cDn').textContent=seen<3?'Collecting data: Dash records a point every minute while this page is open. Schedule `dash snapshot` for a fuller picture.':'Usage is credited to the day a snapshot observed it.';
+}
+
+function calendar(){
+  const inc=increments(3,4), map={};
+  inc.forEach(x=>{const k=dayKey(x.t);map[k]=(map[k]||0)+x.d});
+  const vals=Object.values(map).filter(v=>v>0).sort((a,b)=>a-b);
+  const qv=f=>vals.length?vals[Math.min(vals.length-1,Math.floor(f*vals.length))]:0;
+  const cut=[qv(.2),qv(.4),qv(.6),qv(.8)];
+  const cls=v=>!v?'':v<=cut[0]?'q1':v<=cut[1]?'q2':v<=cut[2]?'q3':v<=cut[3]?'q4':'q5';
+  const t=new Date();t.setHours(12,0,0,0);
+  const dow=(t.getDay()+6)%7, start=new Date(t.getTime()-(dow+35)*DAY);
+  let h='<div class="cal"><span></span>'+['MO','TU','WE','TH','FR','SA','SU'].map(x=>`<span class="dh">${x}</span>`).join('');
+  for(let w=0;w<6;w++){
+    const wk=new Date(start.getTime()+w*7*DAY);
+    h+=`<span class="wk">${wk.toLocaleDateString([],{day:'numeric',month:'numeric'})}</span>`;
+    for(let d=0;d<7;d++){
+      const day=new Date(start.getTime()+(w*7+d)*DAY), k=dayKey(day), v=map[k]||0, fut=day>t&&k!==dayKey(t);
+      h+=`<span class="c ${fut?'future':cls(v)} ${k===dayKey(t)?'today':''}" ${fut?'':`data-tip="${esc(`<span class=k>${dd(day)}</span><b>${f1(v)}%</b> of the weekly limit`)}"`}>${day.getDate()}${v>=1?`<b>${Math.round(v)}</b>`:''}</span>`;
+    }
+  }
+  h+='</div><div class="scale">Less '+['seq-0','seq-1','seq-2','seq-3','seq-4','seq-5'].map(c=>`<i style="background:var(--${c})"></i>`).join('')+' More · weekly % per day</div>';
+  $('cal').innerHTML=h;
+}
+
+function peaksChart(){
+  const pk=sessionPeaks(24);
+  if(!pk.length){$('cP').innerHTML='<div class="empty">No session windows recorded yet.</div>';return}
+  const oneDay=new Set(pk.map(x=>dayKey(x.reset-5*HOUR))).size===1;
+  bars($('cP'),pk.map((x,i)=>({v:x.v,c:x.v>=100?'crit':x.v>=80?'warn':'accent',label:oneDay?hm(x.reset-5*HOUR):new Date(x.reset-5*HOUR).toLocaleDateString([],{day:'numeric',month:'numeric'}),
+    tip:`<span class=k>${dt(x.reset-5*HOUR)} – ${hm(x.reset)}</span><b>${x.v}%</b> peak${x.v>=100?' · <span class=st-crit>limit reached</span>':x.v>=80?' · <span class=st-warn>above 80%</span>':''}`})),
+    {unit:'%',min:100,every:Math.ceil(pk.length/8),aria:'Peak session usage per 5-hour window',refs:[{v:100,label:'LIMIT',c:'--crit'}]});
+  $('cP').insertAdjacentHTML('beforeend',`<div class="legend"><span><i class="sw blk" style="background:var(--accent)"></i>Below 80%</span><span><i class="sw blk" style="background:var(--warn)"></i>80% or more</span><span><i class="sw blk" style="background:var(--crit)"></i>Limit reached</span></div>`);
+}
+
+function hourChart(){
+  const b=hourly(), tot=b.reduce((a,c)=>a+c,0), peak=b.indexOf(Math.max(...b));
+  bars($('cH'),b.map((v,h)=>({v,label:String(h).padStart(2,'0'),tip:`<span class=k>${String(h).padStart(2,'0')}:00 – ${String((h+1)%24).padStart(2,'0')}:00</span><b>${f1(v)}%</b> session use${tot?` · ${Math.round(v/tot*100)}% of all`:''}`})),
+    {unit:'%',min:4,every:3,aria:'Session usage by hour of day'});
+  if(tot) $('cH').insertAdjacentHTML('beforeend',`<p class="note">Busiest hour: <b>${String(peak).padStart(2,'0')}:00</b> · ${Math.round(b[peak]/tot*100)}% of observed session use.</p>`);
+  else $('cH').insertAdjacentHTML('beforeend','<p class="note">Fills in as Dash records snapshots through the day.</p>');
+}
+
+/* ---------- part-to-whole and scoped limits ---------- */
+function surfaces(){
+  let rows=(D.snap?.breakdown||[]).filter(r=>r.pct>0).sort((a,b)=>b.pct-a.pct);
+  if(!rows.length){$('srf').innerHTML='<div class="empty">No per-surface breakdown for this account.</div>';return}
+  if(rows.length>5){const o=rows.slice(4).reduce((a,b)=>a+b.pct,0);rows=[...rows.slice(0,4),{k:'Other',pct:o}]}
+  const tot=rows.reduce((a,b)=>a+b.pct,0), R=60, C=75, cols=['c1','c2','c3','c4','c5'];
+  let a=-Math.PI/2, g='';
+  rows.forEach((r,i)=>{
+    const sw=r.pct/tot*Math.PI*2, a1=a+sw, gap=rows.length>1?.025:0;
+    const p=(ang,rr)=>`${C+rr*Math.cos(ang)},${C+rr*Math.sin(ang)}`;
+    g+=`<path d="M${p(a+gap,R)}A${R},${R} 0 ${sw>Math.PI?1:0} 1 ${p(a1-gap,R)}" stroke="var(--${cols[i]})" stroke-width="18" fill="none" data-tip="${esc(`<span class=k>${r.k}</span><b>${r.pct}%</b>`)}"/>`;
+    a=a1;
+  });
+  $('srf').innerHTML=`<div class="donut"><svg viewBox="0 0 150 150" role="img" aria-label="Weekly use by surface">${g}<text x="75" y="72" text-anchor="middle" class="lab" style="font-size:22px;fill:var(--ink)">${esc(rows[0].pct)}%</text><text x="75" y="90" text-anchor="middle" class="ax">${esc(rows[0].k).toUpperCase()}</text></svg>
+    <div class="rows">${rows.map((r,i)=>`<div class="row"><div class="top2"><span><i class="sw blk" style="background:var(--${cols[i]})"></i> ${esc(r.k)}</span><b>${r.pct}%</b></div></div>`).join('')}</div></div>`;
+}
+function models(){
+  const rows=(D.snap?.scoped||[]).filter(r=>r.model).sort((a,b)=>(b.pct||0)-(a.pct||0));
+  if(!rows.length){$('mdl').innerHTML='<div class="empty">No per-model weekly limits on this plan.</div>';return}
+  $('mdl').innerHTML='<div class="rows">'+rows.map(r=>{const st=r.pct>=90?'crit':r.pct>=70?'warn':'accent';return `<div class="row" data-tip="${esc(`<span class=k>${r.model}</span><b>${r.pct??0}%</b>${r.reset?' · resets '+dt(Date.parse(r.reset)):''}`)}"><div class="top2"><span>${esc(r.model)}</span><b>${r.pct??0}%</b></div><div class="hbar"><i style="width:${Math.min(100,r.pct||0)}%;background:var(--${st})"></i></div></div>`}).join('')+'</div>'
+    +(D.snap?.extra?`<p class="note">Extra usage is enabled on this account.</p>`:'');
+}
+function costModel(){
+  const c=D.cal; if(!c){$('cost').innerHTML='';return}
+  const runs=(c.runs||[]).slice(-6).reverse();
+  $('calibM').textContent=(c.runs||[]).length+' calibration run'+((c.runs||[]).length===1?'':'s');
+  const mx=Math.max(...Object.values(c.sizes));
+  let h='<div class="rows">'+Object.entries(c.sizes).map(([k,v])=>`<div class="row" data-tip="${esc(`<span class=k>Size ${k}</span><b>${f1(v)}%</b> of a session at Sonnet · medium`)}"><div class="top2"><span>Size ${k}</span><b>${f1(v)}%</b></div><div class="hbar"><i style="width:${v/mx*100}%"></i></div></div>`).join('')+'</div>';
+  h+=`<p class="note">Model × ${Object.entries(c.model).map(([k,v])=>`${k} ${v}`).join(' · ')}<br>Effort × ${Object.entries(c.effort).map(([k,v])=>`${k} ${v}`).join(' · ')}<br>1% of a session ≈ ${f1(c.weeklyPerSession)}% of the week</p>`;
+  if(runs.length) h+=`<table style="margin-top:10px"><thead><tr><th>Run</th><th class="n">Est.</th><th class="n">Actual</th></tr></thead><tbody>${runs.map(r=>`<tr><td>${esc(r.size)} · ${esc(r.model)}/${esc(r.effort)}${r.agents>1?' ×'+r.agents:''}</td><td class="n">${f1(r.est)}%</td><td class="n">${f1(r.actual)}%</td></tr>`).join('')}</tbody></table>`;
+  $('cost').innerHTML=h;
+}
+
+/* ---------- telemetry log (the table view of everything above) ---------- */
+function logTable(){
+  const h=(D.history||[]).slice().sort((a,b)=>b[0]-a[0]);
+  $('logM').textContent=h.length+' points · last 42 days';
+  $('log').innerHTML='<thead><tr><th>Time</th><th class="n">Session</th><th>Session reset</th><th class="n">Weekly</th><th>Weekly reset</th></tr></thead><tbody>'+
+    h.slice(0,500).map(r=>`<tr><td>${dt(r[0])}</td><td class="n">${r[1]??'—'}%</td><td>${r[2]?dt(r[2]):'—'}</td><td class="n">${r[3]??'—'}%</td><td>${r[4]?dt(r[4]):'—'}</td></tr>`).join('')+'</tbody>';
+}
+$('csv').addEventListener('click',e=>{
+  e.preventDefault();e.stopPropagation();
+  const rows=[['time','session_pct','session_reset','weekly_pct','weekly_reset'],...(D?.history||[]).map(r=>[new Date(r[0]).toISOString(),r[1]??'',r[2]?new Date(r[2]).toISOString():'',r[3]??'',r[4]?new Date(r[4]).toISOString():''])];
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'}));a.download=`dash-${D?.account||'usage'}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+});
+
+/* ---------- render ---------- */
+function render(){
+  if(!D) return;
+  const a=D.accounts.find(x=>x.key===D.account);
+  $('tabs').innerHTML=D.accounts.map(x=>`<button aria-pressed="${x.key===D.account}" data-k="${esc(x.key)}" title="${esc(x.email||'')}">${esc(x.key)}<small>${esc(x.plan)}</small></button>`).join('');
+  $('alert').hidden=!D.err; $('alertTxt').textContent=D.err?(' '+D.err+(D.history?.length?' — showing recorded history.':'')):'';
+  $('live').classList.toggle('off',!!D.err); $('liveTxt').textContent=D.err?'Offline':'Live · '+new Date(D.now).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  gauge($('gS'),D.proj?.session,5*HOUR); gauge($('gW'),D.proj?.weekly,7*DAY);
+  forecast(); kpis();
+  windowChart('cS',D.proj?.session,5*HOUR,false); windowChart('cW',D.proj?.weekly,7*DAY,true);
+  $('cSm').textContent=D.proj?.session?hm(D.proj.session.start)+' – '+hm(D.proj.session.reset):'';
+  $('cWm').textContent=D.proj?.weekly?dd(D.proj.weekly.start)+' – '+dd(D.proj.weekly.reset):'';
+  dailyChart(); calendar(); peaksChart(); hourChart(); surfaces(); models(); costModel(); logTable();
+  $('ftL').textContent=`${a?.email||D.account} · ${D.plan}${D.tier?' / '+D.tier:''}${D.firstSnapshot?' · recording since '+dd(D.firstSnapshot):''}`;
+  document.title=(D.proj?.session?D.proj.session.pct+'% · ':'')+'Dash';
+}
+let loading=false;
 async function load(){
-  const r=await fetch('/api/data?account='+encodeURIComponent(account)); D=await r.json(); account=D.account;
-  fill($('size'),Object.keys(D.cal.sizes),(q.get('plan')||'M').split(',')[0]);
-  if(q.get('plan')&&!window._p){$('agents').value=q.get('plan').split(',')[1]||1;window._p=1}
-  fill($('model'),Object.keys(D.cal.model),'sonnet'); fill($('effort'),Object.keys(D.cal.effort),'medium');
-  render();
+  if(loading)return; loading=true;
+  try{
+    const r=await fetch('/api/data?account='+encodeURIComponent(account));
+    D=await r.json(); account=D.account; lastLoad=Date.now(); render();
+  }catch(e){ $('alert').hidden=false; $('alertTxt').textContent=' Dash server not reachable. Run `dash open` again.'; $('live').classList.add('off'); $('liveTxt').textContent='Offline'; lastLoad=Date.now(); }
+  finally{ loading=false; }
 }
-['size','agents','model','effort'].forEach(i=>$(i).addEventListener('input',()=>D&&render()));
-matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>D&&render());
-load(); setInterval(load,60000);
+$('tabs').addEventListener('click',e=>{const b=e.target.closest('button[data-k]');if(b&&b.dataset.k!==account){account=b.dataset.k;history.replaceState(null,'','?account='+encodeURIComponent(account));load()}});
+$('refresh').addEventListener('click',load);
+const THEMES=['auto','light','dark'];
+function applyTheme(t){if(t==='auto')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=t;$('theme').title='Theme: '+t;try{localStorage.setItem('dash.theme',t)}catch{}}
+let theme='auto';try{theme=localStorage.getItem('dash.theme')||'auto'}catch{}applyTheme(theme);
+$('theme').addEventListener('click',()=>{theme=THEMES[(THEMES.indexOf(theme)+1)%3];applyTheme(theme);render()});
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change',render);
+let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(render,120)});
+setInterval(()=>{const s=Math.max(0,60-Math.round((Date.now()-lastLoad)/1000));$('next').textContent=lastLoad?'Next sync '+s+'s':'';if(lastLoad&&s===0)load()},1000);
+load();
 </script>
 </body>
 </html>

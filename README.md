@@ -49,6 +49,26 @@ Without `npm link`, run `node dash.mjs <command>` (Windows: `dash.cmd <command>`
 
 All commands take `--account <key|plan>` and `--config <file>`.
 
+## The dashboard
+
+`dash open` serves a local dashboard (light and dark, follows your OS or the toggle in the header), styled after the android menus of *Detroit: Become Human*: the session and weekly gauges are LED rings that go blue → yellow → red, always with the status in words beside them.
+
+| Panel | Shows |
+|---|---|
+| Session / Weekly | Used %, status, burn rate, projected % at reset, when the limit is hit, reset time, window elapsed |
+| Forecast | Both windows at reset, the projected limit hit, how far ahead or behind an even weekly pace you are, your daily budget against your current pace, and how many full sessions are left this week |
+| KPI strip | Session and weekly burn, time to each reset, daily budget, 7-day average, snapshots recorded |
+| Session / Weekly window | Consumed vs. projected over the window, with the limit and (weekly) an even-pace line; hover for exact values |
+| Daily consumption | Weekly % used per day over 14 days, with your average and daily budget |
+| Calendar | Six weeks of daily use as a heatmap |
+| Session peaks | The highest % of each 5-hour window, flagged at 80% and at the limit |
+| Rhythm | When in the day you use your session |
+| By surface / Model limits | Weekly use per surface (Claude Code, other apps) and per-model weekly limits, when your plan has them |
+| Cost model | The task-size estimates, multipliers and calibration runs behind `dash plan` |
+| Telemetry log | Every recorded point, with CSV export |
+
+The day, calendar, peak and rhythm views are built from Dash's own snapshots, so they fill in as it records: every minute while the dashboard is open, plus whenever you run a command. For a complete picture, schedule `dash snapshot` (Task Scheduler, cron or launchd) every 10–15 minutes.
+
 ## Configuration
 
 Dash works without a config: it finds every `~/.claude*` directory and stores its data in your OS data folder. A config file lets you choose. It is read from the first of:
