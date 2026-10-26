@@ -92,6 +92,7 @@ Dash works without a config: it finds every `~/.claude*` directory and stores it
   "port": 7077,
   "browser": null,                       // Chromium path for `open --app`; default: common locations
   "idleShutdownMinutes": 30,             // the dashboard server stops after this much idle time
+  "minFetchSeconds": 120,                // at most one call to the usage endpoint per account per 2 minutes
   "costModel": {                         // starting estimates; `claude-dash done` refines them per account
     "sizes":  { "XS": 0.5, "S": 2, "M": 6, "L": 15, "XL": 35 },
     "model":  { "haiku": 0.35, "sonnet": 1, "opus": 1.7, "fable": 3 },
@@ -116,6 +117,8 @@ See [`config.example.json`](config.example.json).
 ## Use it from Claude Code
 
 Copy `skill/SKILL.md` to `~/.claude/skills/dash/SKILL.md` (or the `skills` folder of your other config dirs). Claude then runs `claude-dash plan` before large tasks, shows you the options, and runs `claude-dash done` afterwards. If `claude-dash` is not on your PATH, change the CLI line in the skill to `node /path/to/claude-dash/dash.mjs`.
+
+**Rate limits.** The usage endpoint is rate limited. Dash calls it at most once per account every `minFetchSeconds` (default 120), shared across every open window and command; anything sooner reuses the last snapshot. If the endpoint answers 429, Dash stops calling it for the `Retry-After` time it sends (else 5 minutes, doubling up to an hour) and shows the last recorded figures with a "Rate limited" banner.
 
 ## Privacy
 

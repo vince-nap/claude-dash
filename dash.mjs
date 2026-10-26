@@ -34,6 +34,7 @@ const DEFAULTS = {
   port: 7077,
   browser: null,             // path to a Chromium browser for `open --app`; null = try common locations
   idleShutdownMinutes: 30,
+  minFetchSeconds: 120,      // never call the usage endpoint more often than this per account
   costModel: {},             // overrides for SEED below
 };
 function findConfigFile(explicit) {
@@ -109,10 +110,14 @@ async function fetchUsage(acct) {
   const r = await fetch('https://api.anthropic.com/api/oauth/usage', {
     headers: { Authorization: 'Bearer ' + o.accessToken, 'anthropic-beta': 'oauth-2025-04-20', 'User-Agent': 'claude-dash' },
   });
+  if (r.status === 429) {
+    const ra = parseInt(r.headers.get('retry-after') || '', 10);
+    throw Object.assign(new Error('usage endpoint 429 (rate limited)'), { status: 429, retryAfter: Number.isFinite(ra) && ra > 0 ? ra * 1000 : null });
+  }
   if (!r.ok) throw new Error(`usage endpoint ${r.status}`);
   return r.json();
 }
-let DATA = null;
+let DATA = null, CFG = DEFAULTS;
 const acctDir = a => { const d = path.join(DATA, a.key); fs.mkdirSync(d, { recursive: true }); return d; };
 function readJsonl(f) { try { return fs.readFileSync(f, 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l)); } catch { return []; } }
 function readJson(f, dflt) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return dflt; } }
@@ -134,11 +139,35 @@ function normalise(raw) {
     extra: raw.extra_usage?.is_enabled ? raw.extra_usage : null,
   };
 }
-async function snapshot(acct, { record = true } = {}) {
-  const snap = normalise(await fetchUsage(acct));
+// The endpoint is rate limited, and every window, refresh and command would otherwise call it.
+// So: at most one call per account per minFetchSeconds (shared by all processes through the
+// history file), and after a 429 no calls at all until the back-off ends (Retry-After, else
+// 5 minutes doubling to an hour). Meanwhile the last recorded snapshot is served, marked.
+const backoffFile = a => path.join(acctDir(a), 'backoff.json');
+async function snapshot(acct, { record = true, fresh = false } = {}) {
+  const f = path.join(acctDir(acct), 'history.jsonl');
+  const last = readJsonl(f).at(-1);
+  const now = Date.now();
+  const bo = readJson(backoffFile(acct), null);
+  if (bo && bo.until > now) {
+    if (last) return { ...last, stale: { reason: 'rate-limited', until: bo.until } };
+    throw new Error(`usage endpoint rate limited; Dash retries after ${fmtT(bo.until)}`);
+  }
+  const minGap = Math.max(30, Number(CFG.minFetchSeconds) || 120) * 1000;
+  if (!fresh && last && now - last.t < minGap) return { ...last, cached: true };
+  let raw;
+  try { raw = await fetchUsage(acct); }
+  catch (e) {
+    if (e.status === 429) {
+      const wait = e.retryAfter || Math.min(60 * 60e3, bo?.wait ? bo.wait * 2 : 5 * 60e3);
+      fs.writeFileSync(backoffFile(acct), JSON.stringify({ until: now + wait, wait }));
+      if (last) return { ...last, stale: { reason: 'rate-limited', until: now + wait } };
+    }
+    throw e;
+  }
+  if (bo) { try { fs.unlinkSync(backoffFile(acct)); } catch {} }
+  const snap = normalise(raw);
   if (record) {
-    const f = path.join(acctDir(acct), 'history.jsonl');
-    const last = readJsonl(f).at(-1);
     // skip duplicates written within 60s with identical numbers
     const same = last && snap.t - last.t < 60e3 && last.session?.pct === snap.session?.pct && last.weekly?.pct === snap.weekly?.pct;
     if (!same) fs.appendFileSync(f, JSON.stringify(snap) + '\n');
@@ -287,7 +316,8 @@ async function cmdDone(acct, o) {
   const p = readJson(pf, null);
   if (!p) return console.log('No pending plan.');
   const model = String(o.model || p.model || 'sonnet'), effort = String(o.effort || p.effort || 'medium');
-  const snap = await snapshot(acct);
+  const snap = await snapshot(acct, { fresh: true });
+  if (snap.stale) return console.log(`Usage endpoint is rate limited until ${fmtT(snap.stale.until)}; run \`claude-dash done\` again after that to calibrate.`);
   if (!snap.session || Date.parse(snap.session.reset) - Date.parse(p.sReset) > 120e3) return console.log('Session window rolled over during the task; skipping calibration.');
   const actual = snap.session.pct - p.s0;
   const cal = loadCal(acct);
@@ -400,7 +430,7 @@ const o = parseArgs(process.argv.slice(2));
 const cmd = o._[0] || 'help';
 try {
   const cfg = loadConfig(typeof o.config === 'string' ? o.config : null);
-  DATA = cfg.dataDir;
+  DATA = cfg.dataDir; CFG = cfg;
   COST = { ...SEED, ...cfg.costModel, sizes: { ...SEED.sizes, ...cfg.costModel?.sizes }, model: { ...SEED.model, ...cfg.costModel?.model }, effort: { ...SEED.effort, ...cfg.costModel?.effort } };
   if (cmd === 'serve') await cmdServe(o, cfg);
   else if (cmd === 'help' || o.help) console.log(HELP);
@@ -409,8 +439,8 @@ try {
   else if (cmd === 'accounts') configuredAccounts(cfg).forEach(d => { const a = accountInfo(d); console.log(`${a.key}\t${a.plan}\t${a.email || ''}`); });
   else {
     const acct = resolveAccount(cfg, o.account);
-    if (cmd === 'snapshot') { const s = await snapshot(acct); console.log(`recorded ${acct.key}: session ${s.session?.pct}% weekly ${s.weekly?.pct}%`); }
-    else if (cmd === 'status') { const s = await snapshot(acct); const h = readJsonl(path.join(acctDir(acct), 'history.jsonl')); console.log(renderStatus(acct, s, project(h, s))); }
+    if (cmd === 'snapshot') { const s = await snapshot(acct); console.log(s.stale ? `rate limited until ${fmtT(s.stale.until)}; nothing recorded` : s.cached ? `${acct.key}: last snapshot is under ${CFG.minFetchSeconds}s old; nothing new recorded` : `recorded ${acct.key}: session ${s.session?.pct}% weekly ${s.weekly?.pct}%`); }
+    else if (cmd === 'status') { const s = await snapshot(acct); const h = readJsonl(path.join(acctDir(acct), 'history.jsonl')); console.log(renderStatus(acct, s, project(h, s))); if (s.stale) console.log(`(rate limited: figures from ${fmtT(s.t)}; Dash retries after ${fmtT(s.stale.until)})`); }
     else if (cmd === 'plan') await cmdPlan(acct, o, cfg);
     else if (cmd === 'done') await cmdDone(acct, o);
     else if (cmd === 'open') cmdOpen(acct, { app: o.app }, cfg);

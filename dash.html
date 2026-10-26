@@ -94,6 +94,9 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
 .iconbtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6}
 .alert{display:flex;gap:10px;align-items:flex-start;margin:0 0 18px;padding:12px 16px;border:1px solid color-mix(in srgb,var(--crit) 40%,transparent);border-left:3px solid var(--crit);background:color-mix(in srgb,var(--crit) 8%,var(--panel));color:var(--ink)}
 .alert b{font:600 11px/1.6 var(--f-num);letter-spacing:.2em;color:var(--crit)}
+.alert.warn{border-color:color-mix(in srgb,var(--warn) 45%,transparent);border-left-color:var(--warn);background:color-mix(in srgb,var(--warn) 9%,var(--panel))}
+.alert.warn b{color:var(--warn)}
+.live.stale i{background:var(--warn);animation:none}
 
 /* ---------- grid and panels ---------- */
 .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
@@ -263,7 +266,7 @@ footer{margin-top:22px;display:flex;flex-wrap:wrap;gap:6px 20px;justify-content:
     </div>
   </header>
   <div class="editbar" id="editbar" role="region" aria-label="Layout editor"><b>EDIT LAYOUT</b><span>Drag panels to reorder, or use the arrows. Pick a width to sit panels side by side: ¼ ⅓ ½ ⅔ or full. Hidden panels stay here, dimmed.</span><button class="btn" id="resetLayout" type="button">Reset</button><button class="btn solid" id="doneLayout" type="button">Done</button></div>
-  <div class="alert" id="alert" hidden role="alert"><b>SIGNAL LOST</b><span id="alertTxt"></span></div>
+  <div class="alert" id="alert" hidden role="alert"><b id="alertT">SIGNAL LOST</b><span id="alertTxt"></span></div>
 
   <main class="grid" id="main">
     <section data-pid="session" data-title="Session" data-span="4" class="panel s4 reveal"><div class="ph"><h2>Session</h2><span class="meta">5-hour window</span></div><div id="gS"></div></section>
@@ -587,8 +590,12 @@ function render(){
   const a=D.accounts.find(x=>x.key===D.account);
   $('acctName').textContent=D.account; $('acctPlan').textContent=D.plan||''; $('acctBtn').title=a?.email||'';
   $('acctMenu').innerHTML=D.accounts.map((x,i)=>`<li class="acct-opt" role="option" id="ao${i}" data-k="${esc(x.key)}" aria-selected="${x.key===D.account}"><span><span class="acct-v">${esc(x.key)}</span><small>${esc(x.email||'no e-mail found')}</small></span><span class="acct-plan">${esc(x.plan)}</span><svg class="acct-tick" viewBox="0 0 14 14" aria-hidden="true"><path d="m2.5 7.5 3 3 6-7"/></svg></li>`).join('');
-  $('alert').hidden=!D.err; $('alertTxt').textContent=D.err?(' '+D.err+(D.history?.length?' — showing recorded history.':'')):'';
-  $('live').classList.toggle('off',!!D.err); $('liveTxt').textContent=D.err?'Offline':'Live · '+new Date(D.now).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const stale=D.snap?.stale;
+  $('alert').hidden=!D.err&&!stale; $('alert').classList.toggle('warn',!D.err&&!!stale);
+  $('alertT').textContent=D.err?'SIGNAL LOST':'RATE LIMITED';
+  $('alertTxt').textContent=D.err?(' '+D.err+(D.history?.length?' — showing recorded history.':'')):stale?` The usage endpoint asked Dash to slow down. Showing the figures from ${hm(D.snap.t)}; Dash checks again at ${hm(stale.until)}.`:'';
+  $('live').classList.toggle('off',!!D.err); $('live').classList.toggle('stale',!D.err&&!!(stale||D.snap?.cached));
+  $('liveTxt').textContent=D.err?'Offline':stale?'Paused · data '+hm(D.snap.t):D.snap?.cached?'Live · data '+hm(D.snap.t):'Live · '+new Date(D.now).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
   gauge($('gS'),D.proj?.session,5*HOUR); gauge($('gW'),D.proj?.weekly,7*DAY);
   forecast(); kpis();
   windowChart('cS',D.proj?.session,5*HOUR,false); windowChart('cW',D.proj?.weekly,7*DAY,true);

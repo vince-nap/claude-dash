@@ -9,6 +9,7 @@
   "port": 7077,
   "browser": null,
   "idleShutdownMinutes": 30,
+  "minFetchSeconds": 120,
   "costModel": {
     "sizes": { "XS": 0.5, "S": 2, "M": 6, "L": 15, "XL": 35 },
     "model": { "haiku": 0.35, "sonnet": 1, "opus": 1.7, "fable": 3 },
