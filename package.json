@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Usage meter and task planner for Claude Code: session and weekly limits, burn rate, projected limit hit, and per-task cost estimates.",
   "type": "module",
-  "bin": { "dash": "dash.mjs" },
+  "bin": { "claude-dash": "dash.mjs" },
   "files": ["dash.mjs", "dash.html", "dash.png", "config.example.json", "skill/SKILL.md"],
   "engines": { "node": ">=18" },
   "keywords": ["claude", "claude-code", "usage", "rate-limit", "dashboard"],

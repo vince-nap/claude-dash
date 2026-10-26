@@ -5,11 +5,11 @@ description: Usage dashboard and task planner for Claude Code accounts. Use when
 
 # Dash
 
-CLI: `dash <cmd>` (or `node <path-to-claude-dash>/dash.mjs <cmd>` if you did not `npm link` it). The account defaults to this session's CLAUDE_CONFIG_DIR; override with `--account <key|plan>`; `dash accounts` lists them. Data comes from the same usage endpoint as Claude Code's /usage, so percentages and reset times are exact; task cost estimates are calibrated heuristics.
+CLI: `claude-dash <cmd>` (or `node <path-to-claude-dash>/dash.mjs <cmd>` if you did not `npm link` it). The account defaults to this session's CLAUDE_CONFIG_DIR; override with `--account <key|plan>`; `claude-dash accounts` lists them. Data comes from the same usage endpoint as Claude Code's /usage, so percentages and reset times are exact; task cost estimates are calibrated heuristics.
 
 ## Commands
 - `status` - session + weekly % used, burn rate, projected %-at-reset, projected limit-hit time, reset times.
-- `open [--app]` - opens the browser dashboard (charts for session and weekly: consumed, projected, limit, reset; account switcher; task planner).
+- `open [--app]` - opens the browser dashboard (charts for session and weekly: consumed, projected, limit, reset; account switcher; forecast, daily, calendar and session analytics). Task planning is CLI-only: `plan`.
 - `plan --size XS|S|M|L|XL [--agents N] [--desc "..."] [--open]` - text chart + model/effort options table + fit verdicts + recommendation + agent count that fits.
 - `done [--model m --effort e]` - after the task, measures actual cost and recalibrates estimates. Always run it after a planned task.
 - `snapshot` - record a data point (improves burn-rate projection).

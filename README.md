@@ -4,7 +4,7 @@
 
 Dash shows how much of your Claude Code **5-hour session** and **weekly** limit you have used, how fast you are burning it, and whether you will hit the limit before it resets. It can also **estimate what a task will cost** before you start it, per model and effort, and learn from what tasks actually cost.
 
-- `dash status` in the terminal, or `dash open` for a local dashboard with charts
+- `claude-dash status` in the terminal, or `claude-dash open` for a local dashboard with charts
 - several accounts side by side (every Claude Code config dir, e.g. `~/.claude` and `~/.claude-work`)
 - a Claude Code **skill**, so Claude checks the budget itself before a big task
 - no dependencies: one Node script and one HTML page; nothing leaves your machine except the call to Anthropic's usage endpoint
@@ -27,31 +27,31 @@ Weekly (7d):  [████░░░░░░░░░░░░░░░░░�
 ```sh
 git clone https://github.com/vince-nap/claude-dash.git
 cd claude-dash
-npm link          # optional: puts `dash` on your PATH
-dash init         # writes a starter config with the accounts it finds
-dash status
+npm link          # optional: puts `claude-dash` on your PATH
+claude-dash init  # writes a starter config with the accounts it finds
+claude-dash status
 ```
 
-Without `npm link`, run `node dash.mjs <command>` (Windows: `dash.cmd <command>`).
+Without `npm link`, run `node dash.mjs <command>` (Windows: `claude-dash.cmd <command>`).
 
 ## Commands
 
 | Command | What it does |
 |---|---|
-| `dash status` | Current usage, burn rate, projected % at reset, projected limit-hit time |
-| `dash open [--app]` | Starts a local server on `127.0.0.1` and opens the dashboard (`--app` opens it in its own Chromium window) |
-| `dash plan --size XS\|S\|M\|L\|XL [--agents N] [--desc "…"] [--json] [--open]` | Cost of a task per model and effort, whether it fits, and a recommendation |
-| `dash done [--model m --effort e]` | After a planned task: measures what it really cost and recalibrates the estimates |
-| `dash snapshot` | Records a data point; run it on a schedule for better burn-rate projections |
-| `dash accounts` | Lists the accounts Dash knows |
-| `dash init [--path f] [--force]` | Writes a starter config |
-| `dash config` | Shows which config file, data dir and accounts are in use |
+| `claude-dash status` | Current usage, burn rate, projected % at reset, projected limit-hit time |
+| `claude-dash open [--app]` | Starts a local server on `127.0.0.1` and opens the dashboard (`--app` opens it in its own Chromium window) |
+| `claude-dash plan --size XS\|S\|M\|L\|XL [--agents N] [--desc "…"] [--json] [--open]` | Cost of a task per model and effort, whether it fits, and a recommendation |
+| `claude-dash done [--model m --effort e]` | After a planned task: measures what it really cost and recalibrates the estimates |
+| `claude-dash snapshot` | Records a data point; run it on a schedule for better burn-rate projections |
+| `claude-dash accounts` | Lists the accounts Dash knows |
+| `claude-dash init [--path f] [--force]` | Writes a starter config |
+| `claude-dash config` | Shows which config file, data dir and accounts are in use |
 
 All commands take `--account <key|plan>` and `--config <file>`.
 
 ## The dashboard
 
-`dash open` serves a local dashboard (light and dark, follows your OS or the toggle in the header), styled after the android menus of *Detroit: Become Human*: the session and weekly gauges are LED rings that go blue → yellow → red, always with the status in words beside them.
+`claude-dash open` serves a local dashboard (light and dark, follows your OS or the toggle in the header), styled after the android menus of *Detroit: Become Human*: the session and weekly gauges are LED rings that go blue → yellow → red, always with the status in words beside them.
 
 | Panel | Shows |
 |---|---|
@@ -64,10 +64,10 @@ All commands take `--account <key|plan>` and `--config <file>`.
 | Session peaks | The highest % of each 5-hour window, flagged at 80% and at the limit |
 | Rhythm | When in the day you use your session |
 | By surface / Model limits | Weekly use per surface (Claude Code, other apps) and per-model weekly limits, when your plan has them |
-| Cost model | The task-size estimates, multipliers and calibration runs behind `dash plan` |
+| Cost model | The task-size estimates, multipliers and calibration runs behind `claude-dash plan` |
 | Telemetry log | Every recorded point, with CSV export |
 
-The day, calendar, peak and rhythm views are built from Dash's own snapshots, so they fill in as it records: every minute while the dashboard is open, plus whenever you run a command. For a complete picture, schedule `dash snapshot` (Task Scheduler, cron or launchd) every 10–15 minutes.
+The day, calendar, peak and rhythm views are built from Dash's own snapshots, so they fill in as it records: every minute while the dashboard is open, plus whenever you run a command. For a complete picture, schedule `claude-dash snapshot` (Task Scheduler, cron or launchd) every 10–15 minutes.
 
 ## Configuration
 
@@ -90,7 +90,7 @@ Dash works without a config: it finds every `~/.claude*` directory and stores it
   "port": 7077,
   "browser": null,                       // Chromium path for `open --app`; default: common locations
   "idleShutdownMinutes": 30,             // the dashboard server stops after this much idle time
-  "costModel": {                         // starting estimates; `dash done` refines them per account
+  "costModel": {                         // starting estimates; `claude-dash done` refines them per account
     "sizes":  { "XS": 0.5, "S": 2, "M": 6, "L": 15, "XL": 35 },
     "model":  { "haiku": 0.35, "sonnet": 1, "opus": 1.7, "fable": 3 },
     "effort": { "low": 0.6, "medium": 1, "high": 1.6, "xhigh": 2.4, "max": 3.5 },
@@ -108,12 +108,12 @@ See [`config.example.json`](config.example.json).
 ## How the numbers work
 
 - **Usage and resets** come straight from the endpoint, so they match `/usage`.
-- **Burn rate** is the slope over the last two hours of snapshots when there are enough, otherwise the average since the window started. More snapshots (from `status`, `plan`, the dashboard, or a scheduled `dash snapshot`) give better projections.
-- **Task estimates** are `size × model × effort × agents`, in % of a 5-hour session, with a 15% overhead per extra parallel agent. They start from the seeds above. `dash plan` remembers the starting point; `dash done` measures the real difference and moves the size estimate 30% of the way towards it. Other activity on the same account in the meantime counts too, which is why the step is small.
+- **Burn rate** is the slope over the last two hours of snapshots when there are enough, otherwise the average since the window started. More snapshots (from `status`, `plan`, the dashboard, or a scheduled `claude-dash snapshot`) give better projections.
+- **Task estimates** are `size × model × effort × agents`, in % of a 5-hour session, with a 15% overhead per extra parallel agent. They start from the seeds above. `claude-dash plan` remembers the starting point; `claude-dash done` measures the real difference and moves the size estimate 30% of the way towards it. Other activity on the same account in the meantime counts too, which is why the step is small.
 
 ## Use it from Claude Code
 
-Copy `skill/SKILL.md` to `~/.claude/skills/dash/SKILL.md` (or the `skills` folder of your other config dirs). Claude then runs `dash plan` before large tasks, shows you the options, and runs `dash done` afterwards. If `dash` is not on your PATH, change the CLI line in the skill to `node /path/to/claude-dash/dash.mjs`.
+Copy `skill/SKILL.md` to `~/.claude/skills/dash/SKILL.md` (or the `skills` folder of your other config dirs). Claude then runs `claude-dash plan` before large tasks, shows you the options, and runs `claude-dash done` afterwards. If `claude-dash` is not on your PATH, change the CLI line in the skill to `node /path/to/claude-dash/dash.mjs`.
 
 ## Privacy
 

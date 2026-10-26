@@ -427,7 +427,7 @@ function dailyChart(){
   bars($('cD'),d.map(x=>({v:x.v,label:new Date(x.t).toLocaleDateString([],{day:'numeric'}),dim:dayKey(x.t)===today,tip:`<span class=k>${dd(x.t)}${dayKey(x.t)===today?' · so far':''}</span><b>${f1(x.v)}%</b> of the weekly limit`})),
     {unit:'%',min:4,aria:'Weekly percentage used per day, last 14 days',refs:[...(avg>0?[{v:avg,label:'avg '+f1(avg)+'%',c:'--ink-3'}]:[]),...(budget!=null?[{v:budget,label:'budget '+f1(budget)+'%/day',c:'--warn',dash:1}]:[])]});
   const seen=d.filter(x=>x.v>0).length;
-  $('cDn').textContent=seen<3?'Collecting data: Dash records a point every minute while this page is open. Schedule `dash snapshot` for a fuller picture.':'Usage is credited to the day a snapshot observed it.';
+  $('cDn').textContent=seen<3?'Collecting data: Dash records a point every minute while this page is open. Schedule `claude-dash snapshot` for a fuller picture.':'Usage is credited to the day a snapshot observed it.';
 }
 
 function calendar(){
@@ -538,7 +538,7 @@ async function load(){
   try{
     const r=await fetch('/api/data?account='+encodeURIComponent(account));
     D=await r.json(); account=D.account; lastLoad=Date.now(); render();
-  }catch(e){ $('alert').hidden=false; $('alertTxt').textContent=' Dash server not reachable. Run `dash open` again.'; $('live').classList.add('off'); $('liveTxt').textContent='Offline'; lastLoad=Date.now(); }
+  }catch(e){ $('alert').hidden=false; $('alertTxt').textContent=' Dash server not reachable. Run `claude-dash open` again.'; $('live').classList.add('off'); $('liveTxt').textContent='Offline'; lastLoad=Date.now(); }
   finally{ loading=false; }
 }
 $('tabs').addEventListener('click',e=>{const b=e.target.closest('button[data-k]');if(b&&b.dataset.k!==account){account=b.dataset.k;history.replaceState(null,'','?account='+encodeURIComponent(account));load()}});

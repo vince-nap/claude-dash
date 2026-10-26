@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Dash: usage snapshots, projections and task planning for Claude Code accounts.
-// Usage: node dash.mjs <command> [options]   (see `dash help`)
+// Usage: node dash.mjs <command> [options]   (see `claude-dash help`)
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
@@ -180,14 +180,14 @@ function project(hist, snap) {
 }
 
 // ---------- cost model ----------
-// Seeds are relative estimates; `dash done` recalibrates them from measured deltas.
+// Seeds are relative estimates; `claude-dash done` recalibrates them from measured deltas.
 // Override any of them with "costModel" in the config.
 const SEED = {
   // % of a 5h session for a Sonnet @ medium run of each size, one agent
   sizes: { XS: 0.5, S: 2, M: 6, L: 15, XL: 35 },
   model: { haiku: 0.35, sonnet: 1, opus: 1.7, fable: 3 },
   effort: { low: 0.6, medium: 1, high: 1.6, xhigh: 2.4, max: 3.5 },
-  weeklyPerSession: 0.12, // weekly % consumed per 1% of session (learned by `dash done`)
+  weeklyPerSession: 0.12, // weekly % consumed per 1% of session (learned by `claude-dash done`)
 };
 let COST = SEED;
 function loadCal(acct) {
@@ -380,7 +380,7 @@ function cmdInit(o) {
   console.log(`Wrote ${target}` + (found.length ? ` with ${found.length} account(s) found: ${found.map(a => a.key).join(', ')}` : ''));
 }
 
-const HELP = `dash <command> [--account <key|plan>] [--config <file>]
+const HELP = `claude-dash <command> [--account <key|plan>] [--config <file>]
   status                          current usage, burn rate, projected limit hit, resets
   snapshot                        record a data point (run periodically for better projections)
   plan --size XS|S|M|L|XL [--agents N] [--desc "..."] [--json] [--open]
